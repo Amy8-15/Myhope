@@ -1,0 +1,806 @@
+/* 全局样式和字体 */
+@import url('https://fonts.googleapis.com/css2?family=SF+Pro+Text:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&display=swap');
+
+/* =============================================== */
+/* ============= 主题颜色变量 (核心) ============= */
+/* =============================================== */
+:root {
+    --body-bg-color: #2c2c2e; --frame-bg-color: #e1e2e6; --text-color: #000000;
+    --text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5); --dock-bg: rgba(242, 242, 247, 0.8);
+    --icon-placeholder-bg: rgba(120, 120, 128, 0.15); --widget-glass-bg: rgba(255, 255, 255, 0.6);
+    --widget-glass-text: #000000; --app-screen-bg: #f2f2f7; --app-screen-text: #000000;
+    --app-header-border: #d1d1d6; --menu-item-bg: #ffffff; --menu-item-hover-bg: #e5e5ea;
+    --change-btn-bg: #007aff;
+}
+body[data-theme="dark"] {
+    --frame-bg-color: #000000; --text-color: #ffffff;
+    --text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); --dock-bg: rgba(50, 50, 52, 0.85);
+    --icon-placeholder-bg: rgba(120, 120, 128, 0.25); --widget-glass-bg: rgba(44, 44, 46, 0.7);
+    --widget-glass-text: #ffffff; --app-screen-bg: #000000; --app-screen-text: #ffffff;
+    --app-header-border: #3a3a3c; --menu-item-bg: #1c1c1e; --menu-item-hover-bg: #2c2c2e;
+    --change-btn-bg: #2c2c2e;
+}
+/* =============================================== */
+/* ============== 基础与布局样式 =============== */
+/* =============================================== */
+:root { font-size: 16px; }
+body {
+    display: flex; justify-content: center; align-items: center; min-height: 100vh;
+    background-color: var(--body-bg-color);
+    font-family: 'SF Pro Text', 'Noto Sans SC', sans-serif; -webkit-font-smoothing: antialiased;
+    margin: 0; padding: 1rem; box-sizing: border-box; transition: background-color 0.3s ease;
+}
+.phone-wrapper { width: 100%; max-width: 390px; aspect-ratio: 390 / 844; display: flex; }
+.mobile-frame {
+    width: 100%; height: 100%; background: var(--frame-bg-color); border-radius: 50px;
+    box-shadow: 0 0 0 10px #1c1c1e; display: flex; flex-direction: column;
+    overflow: hidden; position: relative; background-size: cover; background-position: center;
+    transition: background-color 0.3s ease;
+}
+.status-bar {
+    padding: 1.25rem 2.2rem 0.3rem; height: 3rem; box-sizing: border-box;
+    font-size: 1rem; font-weight: 600; flex-shrink: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    color: var(--text-color); z-index: 110; position: relative;
+    background-color: transparent; transition: background-color 0.3s ease, color 0.3s ease;
+    text-shadow: var(--text-shadow);
+}
+.status-bar > span:first-child {
+    flex-grow: 1;
+}
+.mobile-frame.app-open .status-bar { background-color: var(--app-screen-bg); color: var(--app-screen-text); text-shadow: none; }
+.theme-btn {
+    background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-color); text-shadow: var(--text-shadow);
+}
+.mobile-frame.app-open .theme-btn { color: var(--app-screen-text); text-shadow: none; }
+.main-content { flex-grow: 1; position: relative; display: flex; flex-direction: column; }
+#desktop {
+    flex-grow: 1; padding: 0.625rem 1.25rem; display: grid; grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: minmax(0, 1fr); gap: 0.9375rem;
+}
+.dock {
+    flex-shrink: 0; margin: 0.625rem 1.125rem; background-color: var(--dock-bg);
+    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+    border-radius: 1.875rem; padding: 0.75rem;
+    display: flex; justify-content: space-around; align-items: center;
+}
+.dock-icon { width: 4rem; height: 4rem; border-radius: 1rem; background-color: var(--icon-placeholder-bg); background-size: cover; background-position: center; }
+
+/* =============================================== */
+/* ============= 播放器新布局样式 (最终修正版) ============ */
+/* =============================================== */
+.music-widget {
+    grid-column: 1 / 5;
+    grid-row: 1 / 3; /* 关键：确保播放器只占据顶部 2 行网格空间 */
+    background-color: var(--widget-glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 1rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    color: var(--widget-glass-text);
+    overflow: hidden; /* 防止内部元素意外溢出 */
+}
+
+.music-widget .album-art {
+    height: 100%;
+    flex-shrink: 0; /* 关键：防止专辑图在空间不足时被压缩 */
+    aspect-ratio: 1 / 1; /* 关键：确保自身是完美的正方形 */
+    border-radius: 0.75rem;
+    background-size: cover;
+    background-position: center;
+    background-color: rgba(0,0,0,0.2);
+    cursor: pointer;
+}
+
+.music-widget .song-info {
+    flex-grow: 1; /* 关键：占据所有剩余的横向空间 */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* 关键：将标题、进度条、按钮三部分在垂直方向上均匀分布 */
+    min-width: 0; /* 关键：允许此容器收缩，并让内部的文字正确截断，防止布局崩溃 */
+}
+
+.top-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.song-title {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* 标题过长时显示省略号 */
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.song-title::after {
+    content: 'Artist — Album';
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 400;
+    opacity: 0.8;
+    margin-top: 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.side-btn {
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+    font-size: 1.2rem;
+}
+
+.progress-section {
+    width: 100%;
+}
+
+.progress-container {
+    width: 100%;
+    height: 4px;
+    background-color: rgba(120, 120, 128, 0.3);
+    border-radius: 2px;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background-color: var(--widget-glass-text);
+    border-radius: 2px;
+}
+
+.time-display {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    opacity: 0.8;
+    margin-top: 0.25rem;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.control-btn {
+    background: none;
+    border: none;
+    color: var(--widget-glass-text);
+    cursor: pointer;
+    font-size: 1.3rem;
+}
+
+.control-btn.play {
+    font-size: 2.2rem;
+}
+
+.control-btn.mode {
+    font-size: 1.1rem;
+    opacity: 0.8;
+}
+
+/* =============================================== */
+/* ============== 组件与图标样式 =============== */
+/* =============================================== */
+.widget { border-radius: 1.75rem; overflow: hidden; }
+.large-icon-container { grid-column: 1 / 3; grid-row: 3 / 5; aspect-ratio: 1 / 1; margin-top: 1rem;}
+.upload-widget {
+    width: 100%; height: 100%; background: linear-gradient(180deg, #5a5a5a, #3d3d3d);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    background-size: cover; background-position: center;
+}
+.upload-widget.has-image .placeholder { display: none; }
+.upload-widget .placeholder { color: rgba(255, 255, 255, 0.5); }
+.upload-widget .placeholder i { font-size: 2rem; }
+.upload-widget .placeholder span { display: block; font-size: 0.75rem; margin-top: 0.5rem; }
+.photo-widget {
+    grid-column: 3 / 5; grid-row: 5 / 7; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 0.625rem; background-color: transparent; cursor: pointer;
+}
+.photo-widget .polaroid { background-color: #fdfdfd; padding: 0.5rem 0.5rem 1.125rem; border-radius: 0.25rem; box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.1); width: 100%; box-sizing: border-box; }
+.photo-widget .photo-content { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background-color: #ddd; }
+.photo-widget .widget-title { margin-top: 0.625rem; font-size: 0.8125rem; font-weight: 500; color: var(--text-color); text-shadow: var(--text-shadow); }
+.app-icon { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.app-icon .icon-bg { width: 4.5rem; height: 4.5rem; border-radius: 1.125rem; margin-bottom: 0.5rem; background-size: cover; background-position: center; }
+.app-icon span { font-size: 0.8125rem; color: var(--text-color); text-shadow: var(--text-shadow); }
+.gradient-1 { background: linear-gradient(180deg, #3d3d3d, #2b2b2b); }
+.gradient-2 { background: linear-gradient(180deg, #7e7e7e, #4d4d4d); }
+.gradient-3 { background: linear-gradient(180deg, #8c8c8c, #646464); }
+.app-icon:nth-of-type(1) { grid-column: 3; grid-row: 3; } .app-icon:nth-of-type(2) { grid-column: 4; grid-row: 3; }
+.app-icon:nth-of-type(3) { grid-column: 3; grid-row: 4; } .app-icon:nth-of-type(4) { grid-column: 4; grid-row: 4; }
+.app-icon:nth-of-type(5) { grid-column: 1; grid-row: 5; } .app-icon:nth-of-type(6) { grid-column: 2; grid-row: 5; }
+.app-icon:nth-of-type(7) { grid-column: 1; grid-row: 6; } .app-icon:nth-of-type(8) { grid-column: 2; grid-row: 6; }
+/* =============================================== */
+/* ============= 应用内界面样式 ============== */
+/* =============================================== */
+.app-screen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: var(--app-screen-bg); color: var(--app-screen-text);
+    display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s ease-in-out; z-index: 100;
+}
+.app-screen.active { transform: translateX(0); }
+.app-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--app-header-border); flex-shrink: 0; }
+.back-btn, .header-placeholder { width: 2rem; }
+.back-btn { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--app-screen-text); }
+.app-header h1 { font-size: 1.125rem; margin: 0; text-align: center; font-weight: 600; }
+.app-content { flex-grow: 1; overflow-y: auto; padding: 1.25rem; }
+.menu-list { list-style: none; padding: 0; margin: 0; }
+.menu-list li { background-color: var(--menu-item-bg); padding: 1rem; border-radius: 0.75rem; margin-bottom: 1rem; cursor: pointer; font-weight: 500; transition: background-color 0.2s; }
+.menu-list li:hover { background-color: var(--menu-item-hover-bg); }
+.icon-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.icon-changer-item { background-color: var(--menu-item-bg); border-radius: 0.75rem; padding: 0.75rem; text-align: center; }
+.icon-changer-item .icon-preview { width: 3.5rem; height: 3.5rem; border-radius: 1rem; margin: 0 auto 0.5rem; background-size: cover; background-position: center; background-color: rgba(120, 120, 128, 0.15); }
+.icon-changer-item span { font-size: 0.75rem; display: block; margin-bottom: 0.75rem; }
+.change-btn { background-color: var(--change-btn-bg); color: white; border: none; border-radius: 1rem; padding: 0.4rem 1rem; font-size: 0.8rem; cursor: pointer; }
+.playlist-container { list-style: none; padding: 0; margin: 0; }
+.playlist-item { 
+    display: flex; 
+    align-items: center; 
+    padding: 0.75rem 0; 
+    border-bottom: 1px solid var(--app-header-border);
+}
+
+.playlist-item.playing { 
+    color: #3478f6; 
+    font-weight: 600; 
+}
+
+.song-details {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    min-width: 0;
+}
+
+.playlist-item .song-index { 
+    margin-right: 1rem; 
+}
+
+.playlist-item .song-name { 
+    flex-grow: 1; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+}
+
+.delete-song-btn {
+    background: none;
+    border: none;
+    color: #ff3b30;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-left: 1rem;
+    display: none;
+}
+
+.playlist-item:hover .delete-song-btn {
+    display: block;
+}
+.add-song-btn { background: none; border: none; color: var(--app-screen-text); font-size: 1.2rem; cursor: pointer; }
+/* =============================================== */
+/* ============== 弹窗样式 (新增) ============== */
+/* =============================================== */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: flex-end;
+    z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+}
+.modal-overlay.active { opacity: 1; visibility: visible; }
+.modal-content {
+    background-color: var(--menu-item-bg); color: var(--app-screen-text);
+    width: 100%; max-width: 480px; padding: 1rem; border-radius: 1rem 1rem 0 0;
+    transform: translateY(100%); transition: transform 0.3s ease; box-sizing: border-box;
+}
+.modal-overlay.active .modal-content { transform: translateY(0); }
+.modal-content h2 { font-size: 1rem; text-align: center; margin: 0.5rem 0 1.5rem; }
+.modal-btn, .modal-input {
+    width: 100%; padding: 0.8rem; border-radius: 0.5rem; border: none;
+    font-size: 0.9rem; box-sizing: border-box; margin-bottom: 0.75rem;
+}
+.modal-btn { background-color: #007aff; color: white; cursor: pointer; }
+.modal-input { background-color: var(--app-screen-bg); border: 1px solid var(--app-header-border); color: var(--app-screen-text); }
+.modal-close-btn { background-color: var(--menu-item-hover-bg); color: var(--app-screen-text); }
+/* =============================================== */
+/* ============= 响应式手机端样式 ============= */
+/* =============================================== */
+@media (max-width: 480px) {
+    body { padding: 0; } :root { font-size: 3.5vw; }
+    .phone-wrapper { max-width: none; height: 100%; }
+    .mobile-frame { border-radius: 0; box-shadow: none; }
+    .dock { margin-bottom: 2rem; } .modal-content { width: 100%; }
+}
+/* =============================================== */
+/* ============= API设置页面样式 (新增) ============= */
+/* =============================================== */
+.section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--app-screen-text);
+    opacity: 0.6;
+    margin: 1.5rem 0 0.5rem 0.5rem;
+    text-transform: uppercase;
+}
+.section-title:first-child {
+    margin-top: 0;
+}
+.api-form {
+    background-color: var(--menu-item-bg);
+    padding: 1rem;
+    border-radius: 0.75rem;
+}
+.form-input {
+    width: 100%;
+    padding: 0.8rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--app-header-border);
+    background-color: var(--app-screen-bg);
+    color: var(--app-screen-text);
+    font-size: 0.9rem;
+    box-sizing: border-box;
+    margin-bottom: 0.75rem;
+}
+.form-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+.form-row .form-input {
+    flex-grow: 1;
+    margin-bottom: 0;
+}
+.form-btn-small {
+    padding: 0.8rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    background-color: #007aff;
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+.form-btn-full {
+    width: 100%;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 0.5rem;
+    background-color: #34c759; /* Green for save */
+    color: white;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+.form-btn-full:disabled, .form-btn-small:disabled {
+    background-color: #8e8e93; /* Gray when disabled */
+    cursor: not-allowed;
+}
+.status-msg {
+    font-size: 0.8rem;
+    text-align: center;
+    min-height: 1.2rem;
+    color: #8e8e93;
+}
+.api-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+.api-item-details {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.api-item-name {
+    display: block;
+    font-weight: 500;
+}
+.api-item-url {
+    display: block;
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+.api-item-actions button {
+    background: none;
+    border: 1px solid var(--app-header-border);
+    border-radius: 1rem;
+    padding: 0.4rem 0.8rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--app-screen-text);
+}
+.api-item-actions .api-delete-btn {
+    border-color: #ff3b30;
+    color: #ff3b30;
+}
+.api-item.active {
+    background-color: #eef5ff;
+    border: 1px solid #007aff;
+}
+.api-item.active::after {
+    content: '✓ Active';
+    position: absolute;
+    right: 100px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #34c759;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 8px;
+}
+body[data-theme="dark"] .api-item.active {
+    background-color: #1a2a44;
+    border: 1px solid #0a84ff;
+}
+body[data-theme="dark"] .api-item.active::after {
+    background-color: #30d158;
+}
+.api-item-placeholder {
+    text-align: center;
+    opacity: 0.5;
+    pointer-events: none;
+}
+/* =============================================== */
+/* ============= 字体设置页面样式 (新增) ============= */
+/* =============================================== */
+.font-size-control {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+}
+.font-size-control span {
+    font-weight: 600;
+}
+.font-size-control input[type="range"] {
+    flex-grow: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: var(--app-header-border);
+    border-radius: 3px;
+    outline: none;
+}
+.font-size-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #007aff;
+    cursor: pointer;
+    border-radius: 50%;
+}
+.font-size-control input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #007aff;
+    cursor: pointer;
+    border-radius: 50%;
+}
+/* =============================================== */
+/* ============= 角色书 & 编辑器样式 (新增) ========= */
+/* =============================================== */
+.header-btn-save {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--app-screen-text);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+.editor-section {
+    margin-bottom: 1.5rem;
+}
+.avatar-uploader-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.avatar-uploader {
+    width: 80px;
+    height: 80px;
+    background-color: var(--menu-item-bg);
+    border: 2px dashed var(--app-header-border);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+}
+.avatar-uploader i {
+    font-size: 2rem;
+    color: var(--app-header-border);
+}
+.section-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--app-screen-text);
+    opacity: 0.7;
+    margin-bottom: 0.5rem;
+}
+.form-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 0.8rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--app-header-border);
+    background-color: var(--app-screen-bg);
+    color: var(--app-screen-text);
+    font-size: 0.9rem;
+    box-sizing: border-box;
+    resize: vertical;
+}
+.btn-delete {
+    width: 100%;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 0.5rem;
+    background-color: #ff3b30;
+    color: white;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+/* =============================================== */
+/* ============= 角色票根卡片样式 (新增) ============ */
+/* =============================================== */
+#character-list-container {
+    padding: 1rem;
+}
+.ticket {
+    width: 100%;
+    background-color: var(--menu-item-bg);
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    color: var(--app-screen-text);
+    border-radius: 12px;
+    border: 1px solid var(--app-header-border);
+    box-sizing: border-box;
+    margin-bottom: 1rem;
+    cursor: default;
+    position: relative; /* 为加载动画定位 */
+    overflow: hidden; /* 防止加载动画溢出圆角 */
+}
+.ticket-art {
+    background-color: var(--app-screen-bg);
+    height: 180px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #888;
+    border: 2px dashed var(--app-header-border);
+    border-radius: 8px;
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+}
+.ticket-title h1 {
+    font-family: 'Caveat', cursive;
+    font-size: 3rem;
+    text-align: center;
+    margin: 0;
+    font-weight: normal;
+}
+.ticket-subtitle {
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-top: 10px;
+}
+.ticket-subtitle small {
+    font-weight: normal;
+    opacity: 0.7;
+    font-size: 0.8rem;
+}
+.dotted-divider {
+    border: none;
+    border-top: 2px dashed var(--app-header-border);
+    margin: 15px 0;
+}
+.ticket-details p {
+    margin: 5px 0;
+    font-size: 0.85rem;
+}
+.ticket-details b {
+    font-weight: 700;
+}
+.ticket-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 0.85rem;
+}
+.ticket-quote {
+    margin-top: 15px;
+    text-align: center;
+}
+.ticket-quote blockquote {
+    margin: 0;
+    font-style: italic;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    opacity: 0.8;
+}
+
+.ticket-actions {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px dashed var(--app-header-border);
+    display: flex;
+    justify-content: flex-end;
+}
+.ticket-edit-btn {
+    background-color: var(--app-screen-bg);
+    border: 1px solid var(--app-header-border);
+    color: var(--app-screen-text);
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+.ticket-edit-btn:hover {
+    background-color: var(--menu-item-hover-bg);
+}
+.ticket-edit-btn i {
+    margin-right: 6px;
+}
+
+.editable-field {
+    display: inline;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+.editable-field:hover {
+    background-color: var(--menu-item-hover-bg);
+}
+.editable-field:focus {
+    background-color: var(--app-header-border);
+    outline: none;
+}
+
+/* 按钮颜色统一修改 */
+.form-btn-full, #add-url-btn, #save-char-btn {
+    background-color: #444;
+}
+body[data-theme="dark"] .form-btn-full,
+body[data-theme="dark"] #add-url-btn,
+body[data-theme="dark"] #save-char-btn {
+    background-color: #555;
+}
+.form-btn-full:disabled, #add-url-btn:disabled, #save-char-btn:disabled {
+    background-color: #8e8e93 !important;
+}
+
+/* 角色书空状态提示 */
+.empty-list-placeholder {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--app-screen-text);
+    opacity: 0.5;
+}
+
+/* API 状态指示器样式 */
+.api-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.5rem;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    vertical-align: middle;
+}
+.api-status::before {
+    content: '●';
+    margin-right: 0.3rem;
+}
+.api-status.online {
+    color: #30d158;
+    background-color: rgba(48, 209, 88, 0.15);
+}
+.api-status.offline {
+    color: #8e8e93;
+    background-color: rgba(142, 142, 147, 0.15);
+}
+
+/* 加载中状态样式 */
+.ticket .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 12px;
+    z-index: 10;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+body[data-theme="dark"] .ticket .loading-overlay {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.ticket .loading-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-spinner {
+    font-size: 2rem;
+    color: var(--app-screen-text);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 关系修改功能样式 */
+.relationship-wrapper {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+.relationship-wrapper:hover {
+    background-color: var(--menu-item-hover-bg);
+}
+.relationship-wrapper b {
+    margin-right: 6px;
+}
+.relationship-wrapper i {
+    font-size: 0.7em;
+    margin-left: 8px;
+    opacity: 0.6;
+}
+#relationship-options-container .modal-btn {
+    margin-bottom: 0.75rem;
+    background-color: var(--app-screen-bg);
+    color: var(--app-screen-text);
+    border: 1px solid var(--app-header-border);
+}
+#relationship-options-container .modal-btn:hover {
+    background-color: var(--menu-item-hover-bg);
+}

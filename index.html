@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOS Homescreen</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- 引入票根所需的在线字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body data-theme="light">
+
+    <!-- 隐藏的全局输入框 -->
+    <input type="file" id="image-uploader" accept="image/*" style="display: none;">
+    <input type="file" id="audio-uploader" accept=".mp3,.wav,.m4a,.ogg,.flac" style="display: none;" multiple>
+
+    <!-- 隐藏的音频播放器核心 -->
+    <audio id="audio-player"></audio>
+
+    <div class="phone-wrapper">
+        <div class="mobile-frame">
+            <div class="status-bar">
+                <span id="time">12:50</span>
+                <span id="api-status-indicator" class="api-status offline">Offline</span>
+                <div class="status-icons">
+                    <button id="theme-toggle-btn" class="theme-btn"><i class="fas fa-sun"></i></button>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <main id="desktop">
+                    <div class="widget music-widget" data-storage-key="musicWidgetImage">
+                        <div class="album-art" id="music-album-art"></div>
+                        <div class="song-info">
+                            <div class="top-info">
+                                <p id="song-title" class="song-title">未选择歌曲</p>
+                                <button id="playlist-btn" class="side-btn"><i class="fas fa-list-ul"></i></button>
+                            </div>
+                            <div class="progress-section">
+                                <div class="progress-container"><div id="progress-bar" class="progress-bar"></div></div>
+                                <div class="time-display"><span id="current-time">0:00</span><span id="total-time">0:00</span></div>
+                            </div>
+                            <div class="controls">
+                                <button id="prev-btn" class="control-btn"><i class="fas fa-backward-step"></i></button>
+                                <button id="play-pause-btn" class="control-btn play"><i class="fas fa-play"></i></button>
+                                <button id="next-btn" class="control-btn"><i class="fas fa-forward-step"></i></button>
+                                <button id="play-mode-btn" class="control-btn mode"><i class="fas fa-redo"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="large-icon-container">
+                        <div class="widget upload-widget" id="widget-decor" data-storage-key="decorWidgetImage">
+                            <div class="placeholder"><i class="fas fa-image"></i><span>装饰图片</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="app-icon" id="app-chat"><div class="icon-bg gradient-1" data-storage-key="appIconChat"></div><span>聊天</span></div>
+                    <div class="app-icon" id="app-worldbook"><div class="icon-bg gradient-1" data-storage-key="appIconWorldbook"></div><span>世界书</span></div>
+                    <div class="app-icon" id="app-forum"><div class="icon-bg gradient-2" data-storage-key="appIconForum"></div><span>论坛</span></div>
+                    <div class="app-icon" id="app-story"><div class="icon-bg gradient-2" data-storage-key="appIconStory"></div><span>剧情</span></div>
+                    <div class="app-icon" id="app-settings"><div class="icon-bg gradient-3" data-storage-key="appIconSettings"></div><span>设置</span></div>
+                    <div class="app-icon" id="app-personalization"><div class="icon-bg gradient-3" data-storage-key="appIconPersonalization"></div><span>个性化</span></div>
+                    
+                    <div class="app-icon" id="app-character"><div class="icon-bg gradient-3" data-storage-key="appIconCharacter"></div><span>占位符</span></div>
+                    <div class="app-icon" id="app-character-book"><div class="icon-bg gradient-3" data-storage-key="appIconCharacterBook"></div><span>角色书</span></div>
+
+                    <div class="widget photo-widget" id="widget-photo" data-storage-key="photoWidgetImage">
+                        <div class="polaroid"><img class="photo-content" id="photo-content-img" src="" alt=""></div>
+                        <span class="widget-title">Colorful Widget</span>
+                    </div>
+                </main>
+
+                <div class="dock">
+                    <div class="dock-icon" id="dock-icon-1" data-storage-key="dockIcon1"></div>
+                    <div class="dock-icon" id="dock-icon-2" data-storage-key="dockIcon2"></div>
+                    <div class="dock-icon" id="dock-icon-3" data-storage-key="dockIcon3"></div>
+                    <div class="dock-icon" id="dock-icon-4" data-storage-key="dockIcon4"></div>
+                </div>
+                
+                <!-- 应用屏幕区域 -->
+                <div class="app-screen" id="screen-personalization">
+                    <div class="app-header">
+                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>美化设置</h1><div class="header-placeholder"></div>
+                    </div>
+                    <div class="app-content">
+                        <ul class="menu-list">
+                            <li id="menu-change-wallpaper">更换手机壁纸</li>
+                            <li id="menu-change-icons">更换App图标</li>
+                            <li id="menu-api-settings">API接口设置</li>
+                            <li id="menu-font-settings">修改字体</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="app-screen" id="screen-icon-changer">
+                    <div class="app-header">
+                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>更换App图标</h1><div class="header-placeholder"></div>
+                    </div>
+                    <div class="app-content icon-grid-container"><div class="icon-grid"></div></div>
+                </div>
+
+                <div class="app-screen" id="screen-playlist">
+                    <div class="app-header">
+                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>播放列表</h1>
+                        <div class="header-placeholder"><button id="add-song-btn" class="add-song-btn"><i class="fas fa-plus"></i></button></div>
+                    </div>
+                    <div class="app-content"><ul id="playlist-container" class="playlist-container"></ul></div>
+                </div>
+                
+                <div class="app-screen" id="screen-api-settings">
+                    <div class="app-header">
+                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>API接口设置</h1><div class="header-placeholder"></div>
+                    </div>
+                    <div class="app-content">
+                        <h2 class="section-title">已存配置</h2>
+                        <ul id="api-list-container" class="menu-list"></ul>
+                        <h2 class="section-title">新增配置</h2>
+                        <div id="new-api-form" class="api-form">
+                            <input type="text" id="api-name-input" class="form-input" placeholder="配置名称 (例如：我的主力API)">
+                            <input type="text" id="api-url-input" class="form-input" placeholder="API URL (例如：https://api.openai.com)">
+                            <input type="password" id="api-key-input" class="form-input" placeholder="API Key (例如：sk-...)">
+                            <div class="form-row"><select id="api-model-select" class="form-input" disabled><option>请先获取模型列表</option></select><button id="fetch-models-btn" class="form-btn-small">获取模型</button></div>
+                            <p id="api-status-msg" class="status-msg"></p><button id="save-api-btn" class="form-btn-full" disabled>保存配置</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="app-screen" id="screen-font-settings">
+                    <div class="app-header">
+                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>修改字体</h1><div class="header-placeholder"></div>
+                    </div>
+                    <div class="app-content">
+                        <h2 class="section-title">在线字体</h2>
+                        <div class="api-form"><input type="text" id="font-url-input" class="form-input" placeholder="粘贴字体文件URL (ttf, woff2等)"><p class="status-msg">例如：https://fonts.gstatic.com/s/....woff2</p><button id="apply-font-btn" class="form-btn-full">应用字体</button></div>
+                        <h2 class="section-title">全局字号</h2>
+                        <div class="api-form">
+                            <div class="font-size-control"><span>A-</span><input type="range" id="font-size-slider" min="12" max="20" step="1" value="16"><span>A+</span></div>
+                            <p class="status-msg">当前字号: <span id="font-size-value">16px</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="app-screen" id="screen-character-book">
+                    <div class="app-header">
+                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>角色书</h1>
+                        <div class="header-placeholder"><button id="add-char-btn" class="add-song-btn"><i class="fas fa-plus"></i></button></div>
+                    </div>
+                    <div class="app-content" id="character-list-container">
+                    </div>
+                </div>
+
+                <div class="app-screen" id="screen-character-editor">
+                    <div class="app-header">
+                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button>
+                        <h1 id="editor-title">创建角色</h1>
+                        <div class="header-placeholder"><button id="save-char-btn" class="header-btn-save">保存</button></div>
+                    </div>
+                    <div class="app-content">
+                        <div class="editor-section">
+                            <div class="avatar-uploader-container">
+                                <div class="avatar-uploader" id="char-avatar-uploader">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                                <input type="text" id="char-name-input" class="form-input" placeholder="角色姓名">
+                            </div>
+                        </div>
+                        <div class="editor-section">
+                            <label class="section-label">角色设定 (性格、记忆、说话风格等)</label>
+                            <textarea id="char-prompt-input" class="form-textarea" placeholder="这是AI扮演该角色的核心依据..."></textarea>
+                        </div>
+                        <div class="editor-section">
+                            <label class="section-label">我的设定 (面对这个角色时，我是谁？)</label>
+                            <textarea id="user-prompt-input" class="form-textarea" placeholder="例如：我是一个偶然闯入他咖啡店的自由撰稿人..."></textarea>
+                        </div>
+                        <button id="delete-char-btn" class="btn-delete">删除角色</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <div id="add-song-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>添加歌曲</h2>
+            <button id="upload-local-btn" class="modal-btn">从本地文件上传</button>
+            <input type="text" id="url-input" class="modal-input" placeholder="或在此处粘贴网络URL">
+            <button id="add-url-btn" class="modal-btn">添加URL</button>
+            <button id="close-modal-btn" class="modal-close-btn">取消</button>
+        </div>
+    </div>
+
+    <!-- (这是补全的部分) 关系选择弹窗 -->
+    <div id="relationship-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>选择关系</h2>
+            <div id="relationship-options-container">
+                <!-- JS 会在这里动态生成选项 -->
+            </div>
+            <button id="close-relationship-modal-btn" class="modal-close-btn">取消</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
