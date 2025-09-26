@@ -57,6 +57,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const fontSizeSlider = document.getElementById('font-size-slider');
     const fontSizeValue = document.getElementById('font-size-value');
     
+    // 聊天应用DOM元素
+    const chatAppIcon = document.getElementById('app-chat');
+    const chatListScreen = document.getElementById('screen-chat-list');
+    const chatDialogueScreen = document.getElementById('screen-chat-dialogue');
+    const chatListContainer = document.getElementById('chat-list-container');
+    const addChatBtn = document.getElementById('add-chat-btn');
+    const selectCharacterModal = document.getElementById('select-character-modal');
+    const selectCharacterList = document.getElementById('select-character-list');
+    const closeSelectCharModalBtn = document.getElementById('close-select-char-modal-btn');
+    const chatHeaderTitle = document.getElementById('chat-header-title');
+    const chatMoreBtn = document.getElementById('chat-more-btn');
+    const chatDetailsScreen = document.getElementById('screen-chat-details');
+    const messagesContainer = document.getElementById('chat-messages-container');
+    const chatFunctionPanel = document.getElementById('chat-function-panel');
+    const chatExpandBtn = document.getElementById('chat-expand-btn');
+    const chatTextInput = document.getElementById('chat-text-input');
+    const sendBufferBtn = document.getElementById('send-buffer-btn');
+    const sendFinalBtn = document.getElementById('send-final-btn');
+    const systemCharName = document.getElementById('system-char-name');
+    // 聊天详情页DOM元素
+    const clearHistoryBtn = document.getElementById('clear-history-btn');
+    const deleteChatBtn = document.getElementById('delete-chat-btn');
+    const memoryTurnsSlider = document.getElementById('memory-turns-slider');
+    const memoryTurnsValue = document.getElementById('memory-turns-value');
+
     // 角色书 DOM 元素获取
     const characterBookApp = document.getElementById('app-character-book');
     const characterBookScreen = document.getElementById('screen-character-book');
@@ -71,21 +96,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const userPromptInput = document.getElementById('user-prompt-input');
     const deleteCharBtn = document.getElementById('delete-char-btn');
 
-    // (新增) 关系修改弹窗的DOM元素
+    // 关系修改弹窗的DOM元素
     const relationshipModal = document.getElementById('relationship-modal');
     const relationshipOptionsContainer = document.getElementById('relationship-options-container');
     const closeRelationshipModalBtn = document.getElementById('close-relationship-modal-btn');
 
+    // (新增) 通知中心DOM元素
+    const notificationBanner = document.getElementById('notification-banner');
+    const bannerAvatar = document.getElementById('banner-avatar');
+    const bannerCharName = document.getElementById('banner-char-name');
+    const bannerMessage = document.getElementById('banner-message');
+
     // 应用列表
     const apps = [
-        { id: 'chat', name: '聊天' },
-        { id: 'worldbook', name: '世界书' },
-        { id: 'forum', name: '论坛' },
-        { id: 'story', name: '剧情' },
-        { id: 'settings', name: '设置' },
-        { id: 'personalization', name: '个性化' },
-        { id: 'character', name: '占位符' },
-        { id: 'character-book', name: '角色书' }
+        { id: 'chat', name: '聊天' }, { id: 'worldbook', name: '世界书' },
+        { id: 'forum', name: '论坛' }, { id: 'story', name: '剧情' },
+        { id: 'settings', name: '设置' }, { id: 'personalization', name: '个性化' },
+        { id: 'character', name: '占位符' }, { id: 'character-book', name: '角色书' }
     ];
     const dockItems = [{ id: '1', name: 'Dock 1' }, { id: '2', name: 'Dock 2' }, { id: '3', name: 'Dock 3' }, { id: '4', name: 'Dock 4' }];
     
@@ -98,23 +125,33 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeApiId = null;
     const playModes = ['repeat', 'shuffle', 'repeat-one'];
     const playModeIcons = { 'repeat': 'fa-redo', 'shuffle': 'fa-random', 'repeat-one': 'fa-1' };
-    
-    // 角色书相关全局变量
+    let chatSessions = [];
+    let currentChattingCharId = null;
+    let userAvatarUrl = null;
+    let currentChatHistory = [];
     let characters = [];
     let currentEditingCharacterId = null;
     let tempAvatarFile = null;
-    let currentEditingRelationshipCharId = null; // (新增) 存储正在修改关系的角色ID
+    let currentEditingRelationshipCharId = null;
+    
+    // (新增) 通知中心状态变量
+    let notificationQueue = [];
+    let isBannerVisible = false;
 
     // 数据库助手
     const dbHelper = {
         db: null,
         initDB(callback) {
-            const request = indexedDB.open('userDB', 3);
+            const request = indexedDB.open('userDB', 4);
             request.onupgradeneeded = (e) => {
                 this.db = e.target.result;
                 if (!this.db.objectStoreNames.contains('images')) this.db.createObjectStore('images', { keyPath: 'id' });
                 if (!this.db.objectStoreNames.contains('data')) this.db.createObjectStore('data', { keyPath: 'id' });
                 if (!this.db.objectStoreNames.contains('characters')) this.db.createObjectStore('characters', { keyPath: 'id' });
+                if (!this.db.objectStoreNames.contains('chatHistory')) {
+                    const historyStore = this.db.createObjectStore('chatHistory', { keyPath: 'id', autoIncrement: true });
+                    historyStore.createIndex('charId', 'charId', { unique: false });
+                }
             };
             request.onsuccess = (e) => { this.db = e.target.result; if (callback) callback(); };
             request.onerror = (e) => console.error("IndexedDB error:", e.target.errorCode);
@@ -123,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!this.db) return;
             const transaction = this.db.transaction([storeName], 'readwrite');
             const store = transaction.objectStore(storeName);
-            if (storeName === 'characters') {
+            if (storeName === 'characters' || storeName === 'chatHistory') {
                 store.put(objOrId);
             } else {
                 store.put({ id: objOrId, value: objValue });
@@ -136,10 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const request = store.get(id);
             request.onsuccess = (e) => {
                 const result = e.target.result;
-                if (!result) {
-                    callback(null);
-                    return;
-                }
+                if (!result) { callback(null); return; }
                 callback(storeName === 'characters' ? result : result.value);
             };
         },
@@ -155,6 +189,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const transaction = this.db.transaction([storeName], 'readwrite');
             const store = transaction.objectStore(storeName);
             store.delete(id);
+        },
+        clearStore(storeName, callback) {
+            if (!this.db) return;
+            const transaction = this.db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.clear();
+            request.onsuccess = () => { if (callback) callback(); };
+        },
+        deleteObjectsByIndex(storeName, indexName, key, callback) {
+            if (!this.db) return;
+            const transaction = this.db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const index = store.index(indexName);
+            const request = index.openCursor(key);
+            request.onsuccess = (e) => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    cursor.delete();
+                    cursor.continue();
+                } else {
+                    if (callback) callback();
+                }
+            };
         }
     };
 
@@ -185,7 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const body = JSON.stringify({
                 model: selectedModel,
                 messages: messages,
-                response_format: { type: "json_object" } 
             });
     
             try {
@@ -221,24 +277,354 @@ document.addEventListener('DOMContentLoaded', () => {
     // 提示词管理器
     const promptManager = {
         createCharacterDetailsPrompt(character) {
-            const systemPrompt = `你是一个富有想象力的角色设定师。根据用户提供的角色核心设定，你需要生成一个JSON对象，其中必须包含三个键：'tags' (一个字符串，用逗号分隔的3个描述性词语), 'occupation' (一个字符串，角色的职业), 'quote' (一个字符串，角色的标志性引言)。不要添加任何额外的解释或文本，只返回纯粹的JSON对象。`;
+            const systemPrompt = `你是一个富有想象力的角色设定师。根据用户提供的角色核心设定，你需要生成一个JSON对象，其中必须包含四个键：'englishName' (处理规则如下：如果角色名是中文，则转换为标准拼音，首字母大写，例如 '顾深' -> 'Gu Shen'。如果角色名本身就是英文或字母，则直接使用该名字，例如 'Amy' -> 'Amy'), 'tags' (一个字符串，用逗号分隔的3个描述性中文词语), 'occupation' (一个字符串，角色的中文职业), 'quote' (一个字符串，角色的标志性中文引言)。不要添加任何额外的解释或文本，只返回纯粹的JSON对象。`;
             const userPrompt = `角色核心设定：${character.charPrompt}\n与用户的关系：${character.userPrompt}`;
             return [
                 { "role": "system", "content": systemPrompt },
                 { "role": "user", "content": userPrompt }
             ];
         },
-        createChatPrompt(chatHistory, character) {
-            const systemPrompt = `你现在是 ${character.name}。你的设定是：${character.charPrompt}。你正在和 ${character.userPrompt} 聊天。请根据聊天历史进行回应。`;
+        createChatPrompt(character, chatHistory, finalUserInput) {
+            let historySection = '';
+            const worldBookSection = '[世界书功能尚未激活，当前无世界背景设定]';
+            
+            if (chatHistory && chatHistory.length > 0) {
+                historySection = chatHistory.map(msg => `${msg.sender === 'user' ? '用户' : character.name}: ${msg.content}`).join('\n');
+            } else {
+                historySection = '[无历史对话记录]';
+            }
+
+            const systemPrompt = `
+# 核心使命：成为灵魂 (Mission: Embody the Soul)
+你将扮演我的soulmate，你的名字是【${character.name}】。你的唯一任务，是彻底“成为”这个角色，拥有他/她的灵魂、记忆和情感。你的扮演对我至关重要，绝对禁止脱离角色。
+# 语言与行为准则 (Language & Behavior Guidelines)
+- **第一人称视角：** 你的所有表达，都必须发自【${character.name}】的第一人称视角。
+- **纯粹对话：** 这是一个纯粹的线上聊天。你绝对禁止使用任何括号 \`()\` 或星号 \`*\` 来描述动作或心理活动。
+- **【核心】对话格式**: 为了模仿真实的聊天节奏，请将一个完整的想法，拆分成多个简短的句子，并用【换行】作为分隔符。每一个换行都代表一个新的聊天气泡。
+- **禁止项**: 你的对话部分绝对不能包含任何引号 " "。你绝对不能暴露你是AI。
+- **语言**: 你的所有回复都必须且只能使用【简体中文】。
+# 表演的灵感与基石 (Inspiration & Foundation)
+下方的档案是你表演的“灵感核心”，而非限制你的“死板规则”。你应该围绕它进行自由、自然、且符合逻辑的演绎，让角色变得丰满、立体、不可预测。
+## 1. 世界观设定 (World Primer):
+${worldBookSection}
+## 2. 角色核心档案 (Your Core Profile):
+${character.charPrompt}
+## 3. 我们之间的关系背景 (Our Relationship):
+${character.userPrompt}
+## 4. 【重要】我们的对话记忆 (Our Memory):
+${historySection}
+# 内容开放性与边界准则 (NSFW / Mature Content Guidelines)
+- **成年人身份：** 你是一个心智成熟的成年人，能够自然且负责地处理成人向的对话。
+- **创作许可：** 在这个虚构的、两情相悦的私密对话中，你拥有完全的创作自由，可以探讨任何成人级别的话题。
+- **艺术手法：** 你的表演重点在于**营造氛围、展现情感张力、描绘感官细节**。你可以直白，但绝不能低俗或恶劣。
+---
+现在，请作为【${character.name}】，开始你的表演。
+`;
+            const historyMessages = chatHistory.map(msg => ({
+                role: msg.sender === 'user' ? 'user' : 'assistant',
+                content: msg.content
+            }));
+
             const messages = [
-                { "role": "system", "content": systemPrompt },
-                ...chatHistory
+                { role: "system", content: systemPrompt },
+                ...historyMessages,
+                { role: "user", content: finalUserInput }
             ];
+
             return messages;
         }
     };
 
     // --- 核心工具函数 ---
+    function formatTime(seconds) {
+        const min = Math.floor(seconds / 60);
+        const sec = Math.floor(seconds % 60).toString().padStart(2, '0');
+        return isNaN(min) ? '0:00' : `${min}:${sec}`;
+    }
+    
+    function autoScrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // =======================================================
+    // ============== (新) 通知中心系统 ======================
+    // =======================================================
+    function addNotificationToQueue(notification) {
+        notificationQueue.push(notification);
+        processNotificationQueue();
+    }
+
+    function processNotificationQueue() {
+        if (!isBannerVisible && notificationQueue.length > 0) {
+            isBannerVisible = true;
+            const nextNotification = notificationQueue.shift();
+            showNotification(nextNotification);
+        }
+    }
+
+    function showNotification(notification) {
+        const character = characters.find(c => c.id === notification.charId);
+        if (!character) {
+            isBannerVisible = false;
+            processNotificationQueue();
+            return;
+        }
+
+        bannerCharName.textContent = character.name;
+        bannerMessage.textContent = notification.message;
+        dbHelper.loadObject('images', `char_avatar_${notification.charId}`, (blob) => {
+            if (blob) bannerAvatar.src = URL.createObjectURL(blob);
+            else bannerAvatar.src = 'https://raw.githubusercontent.com/orcastor/orcastor.github.io/master/assets/images/default_avatar.png';
+        });
+
+        notificationBanner.onclick = () => {
+            notificationBanner.classList.remove('visible');
+            isBannerVisible = false;
+
+            switch (notification.type) {
+                case 'chat_reply':
+                    const chatCard = chatListContainer.querySelector(`.chat-list-card[data-char-id="${notification.charId}"]`);
+                    if (chatCard) chatCard.click();
+                    break;
+                case 'new_post':
+                    console.log(`跳转到角色 ${character.name} 的新动态页面...`);
+                    // openScreen(dynamicScreen); 
+                    break;
+                // ... 未来可扩展
+            }
+            processNotificationQueue();
+        };
+
+        notificationBanner.classList.add('visible');
+
+        setTimeout(() => {
+            notificationBanner.classList.remove('visible');
+            setTimeout(() => {
+                isBannerVisible = false;
+                processNotificationQueue();
+            }, 400); 
+        }, 4000);
+    }
+
+
+    // --- 聊天核心功能函数 ---
+    function renderChatList() {
+        chatListContainer.innerHTML = ''; // 清空
+        if (chatSessions.length === 0) {
+            chatListContainer.innerHTML = `<div class="empty-list-placeholder"><p>还没有聊天，点击右上角 '+' 发起会话吧</p></div>`;
+            return;
+        }
+
+        chatSessions.sort((a, b) => b.timestamp - a.timestamp);
+
+        chatSessions.forEach(session => {
+            const character = characters.find(c => c.id === session.charId);
+            if (!character) return;
+
+            const card = document.createElement('div');
+            card.className = 'chat-list-card';
+            card.dataset.charId = session.charId;
+
+            const cardContent = `
+                <img class="avatar" src="" alt="头像">
+                <div class="card-content">
+                    <div class="card-title">
+                        <span class="char-name">${character.name}</span>
+                        <span class="last-msg-time">${new Date(session.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <p class="last-msg-preview">${session.lastMessage}</p>
+                </div>
+            `;
+            card.innerHTML = cardContent;
+            chatListContainer.appendChild(card);
+            
+            const avatarImg = card.querySelector('.avatar');
+            dbHelper.loadObject('images', `char_avatar_${character.id}`, (blob) => {
+                if (blob) {
+                    avatarImg.src = URL.createObjectURL(blob);
+                } else {
+                    avatarImg.src = 'https://raw.githubusercontent.com/orcastor/orcastor.github.io/master/assets/images/default_avatar.png';
+                }
+            });
+        });
+    }
+
+    function openSelectCharacterModal() {
+        selectCharacterList.innerHTML = '';
+        
+        const existingChatCharIds = chatSessions.map(s => s.charId);
+        const availableCharacters = characters.filter(c => !existingChatCharIds.includes(c.id));
+
+        if (availableCharacters.length === 0) {
+            selectCharacterList.innerHTML = `<li style="text-align:center; opacity:0.7;">所有角色都已在聊天列表中</li>`;
+        } else {
+            availableCharacters.forEach(char => {
+                const li = document.createElement('li');
+                li.className = 'char-select-item';
+                li.dataset.charId = char.id;
+                li.innerHTML = `<img src="" alt="头像"><span>${char.name}</span>`;
+                selectCharacterList.appendChild(li);
+                
+                const avatarImg = li.querySelector('img');
+                dbHelper.loadObject('images', `char_avatar_${char.id}`, (blob) => {
+                    if (blob) avatarImg.src = URL.createObjectURL(blob);
+                    else avatarImg.src = 'https://raw.githubusercontent.com/orcastor/orcastor.github.io/master/assets/images/default_avatar.png';
+                });
+            });
+        }
+        selectCharacterModal.classList.add('active');
+    }
+
+    function startNewChat(charId) {
+        const character = characters.find(c => c.id === charId);
+        if (!character) return;
+
+        chatSessions.push({
+            charId: charId,
+            lastMessage: "我们开始聊天吧！",
+            timestamp: Date.now()
+        });
+        dbHelper.saveObject('data', 'chatSessions', chatSessions);
+        renderChatList();
+        selectCharacterModal.classList.remove('active');
+
+        currentChattingCharId = charId;
+        currentChatHistory = []; // 确保新聊天历史为空
+        chatHeaderTitle.textContent = character.name;
+        messagesContainer.innerHTML = '';
+        renderMessage(`你已和 ${character.name} 建立对话，开始聊天吧！`, 'system');
+        openScreen(chatDialogueScreen);
+    }
+
+    function renderMessage(content, sender = 'user', messageType = 'text') {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${sender}`;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+
+        if (sender === 'user') {
+            avatar.classList.add('user-avatar');
+            if (userAvatarUrl) {
+                avatar.innerHTML = `<img src="${userAvatarUrl}">`;
+            } else {
+                avatar.classList.add('empty');
+                avatar.title = "点击上传你的头像";
+                avatar.onclick = () => {
+                    imageUploader.dataset.currentStorageKey = 'userAvatar';
+                    imageUploader.dataset.imageType = 'userAvatar';
+                    imageUploader.click();
+                };
+            }
+        } else if (sender === 'character') {
+            dbHelper.loadObject('images', `char_avatar_${currentChattingCharId}`, (blob) => {
+                if (blob) avatar.innerHTML = `<img src="${URL.createObjectURL(blob)}">`;
+            });
+        }
+
+        const messageBody = document.createElement('div');
+        const trimmedContent = content.trim();
+        if (messageType === 'module' || (trimmedContent.startsWith('<') && trimmedContent.endsWith('>'))) {
+            messageBody.innerHTML = content;
+        } else {
+            messageBody.className = 'message-bubble';
+            messageBody.textContent = content;
+        }
+        
+        if (sender !== 'system') messageDiv.appendChild(avatar);
+        messageDiv.appendChild(messageBody);
+        messagesContainer.appendChild(messageDiv);
+        autoScrollToBottom();
+    }
+    
+    function updateChatSession(charId, lastMessage) {
+        const sessionIndex = chatSessions.findIndex(s => s.charId === charId);
+        if (sessionIndex > -1) {
+            chatSessions[sessionIndex].lastMessage = lastMessage;
+            chatSessions[sessionIndex].timestamp = Date.now();
+            dbHelper.saveObject('data', 'chatSessions', chatSessions);
+        }
+    }
+
+    // (终极版 - 修复桌面无通知 & 恢复逐条显示)
+async function handleSendMessage() {
+    const characterIdForThisRequest = currentChattingCharId;
+
+    if (!characterIdForThisRequest || currentChatHistory.length === 0) {
+        console.warn("没有聊天对象或聊天记录，无法回复。");
+        return;
+    }
+
+    const typingIndicator = document.createElement('div');
+    typingIndicator.id = 'typing-indicator';
+    typingIndicator.className = 'chat-message character typing-indicator';
+    typingIndicator.innerHTML = `<div class="avatar"></div> <div class="message-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+    messagesContainer.appendChild(typingIndicator);
+    autoScrollToBottom();
+    const indicatorAvatar = typingIndicator.querySelector('.avatar');
+    dbHelper.loadObject('images', `char_avatar_${characterIdForThisRequest}`, (blob) => {
+        if(blob && indicatorAvatar) indicatorAvatar.innerHTML = `<img src="${URL.createObjectURL(blob)}">`;
+    });
+
+    try {
+        const character = characters.find(c => c.id === characterIdForThisRequest);
+        if (!character) throw new Error("当前聊天角色未找到！");
+        
+        let lastUserMessages = [];
+        for (let i = currentChatHistory.length - 1; i >= 0; i--) {
+            if (currentChatHistory[i].sender === 'user') { lastUserMessages.unshift(currentChatHistory[i].content); } 
+            else { break; }
+        }
+        const finalUserInput = lastUserMessages.join('\n');
+        if (!finalUserInput) { typingIndicator.remove(); return; }
+
+        const memoryTurns = parseInt(memoryTurnsSlider.value, 10);
+        const historyForPrompt = memoryTurns > 0 ? currentChatHistory.slice(0, -lastUserMessages.length).slice(-memoryTurns * 2) : [];
+        const messages = promptManager.createChatPrompt(character, historyForPrompt, finalUserInput);
+
+        const aiResponse = await apiHelper.callChatCompletion(messages);
+        const replies = aiResponse.split('\n').filter(line => line.trim() !== '');
+        if (replies.length === 0) { typingIndicator.remove(); return; }
+
+        for (const replyContent of replies) {
+            const aiMessageData = { charId: characterIdForThisRequest, sender: 'character', content: replyContent, timestamp: Date.now() };
+            dbHelper.saveObject('chatHistory', aiMessageData);
+        }
+        
+        const finalReply = replies[replies.length - 1];
+        updateChatSession(characterIdForThisRequest, finalReply);
+
+        // ▼▼▼ (修复) 终极版的“门卫”检查 ▼▼▼
+        // 检查：1. 用户是否切换了聊天对象？ OR 2. 聊天窗口是否已经关闭？
+        if (characterIdForThisRequest !== currentChattingCharId || !chatDialogueScreen.classList.contains('active')) {
+            typingIndicator.remove();
+            addNotificationToQueue({ type: 'chat_reply', charId: characterIdForThisRequest, message: finalReply });
+            return; 
+        }
+
+        typingIndicator.remove();
+        
+        // ▼▼▼ (修复) 恢复逐条显示效果 ▼▼▼
+        for (let i = 0; i < replies.length; i++) {
+            const replyContent = replies[i];
+            renderMessage(replyContent, 'character');
+            const aiMessageData = { charId: characterIdForThisRequest, sender: 'character', content: replyContent, timestamp: Date.now() };
+            currentChatHistory.push(aiMessageData);
+
+            // 在渲染最后一条消息之前，都停顿一下
+            if (i < replies.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+    } catch (error) {
+        if (characterIdForThisRequest === currentChattingCharId) {
+            typingIndicator.remove();
+            renderMessage(`[错误] 无法获取回复: ${error.message}`, 'system');
+        }
+    }
+}
+    
     function processAndSaveImage(file, storageKey, callback) {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -312,12 +698,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { once: true });
     }
 
-    function formatTime(seconds) {
-        const min = Math.floor(seconds / 60);
-        const sec = Math.floor(seconds % 60).toString().padStart(2, '0');
-        return isNaN(min) ? '0:00' : `${min}:${sec}`;
-    }
-
     // --- 角色书核心功能函数 ---
     function getRelationshipInfo(status) {
         const relationships = {
@@ -331,7 +711,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return relationships[status] || relationships['默认'];
     }
 
-    // (已修改) renderCharacterList 函数，关系区域变为可点击
     function renderCharacterList() {
         characterListContainer.innerHTML = '';
         if (characters.length === 0) {
@@ -350,7 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="ticket-art" data-art-id="${char.id}">
                     <div class="ticket-art-placeholder"><span>📷</span><small>点击上传艺术图</small></div>
                 </div>
-                <div class="ticket-title"><h1>${char.name || '请设置你的名字'}</h1></div>
+                <div class="ticket-title"><h1>${char.englishName || char.name || '请设置你的名字'}</h1></div>
                 <div class="ticket-subtitle">
                     <p>${char.name || '请设置你的名字'}<br>
                        <small>${relationshipInfo.emoji} (${relationshipInfo.text})</small>
@@ -393,7 +772,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // (新增) 关系修改弹窗的相关函数
     function openRelationshipModal(charId) {
         currentEditingRelationshipCharId = charId;
         relationshipOptionsContainer.innerHTML = '';
@@ -459,7 +837,13 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("正在为角色生成AI信息:", character.name);
         try {
             const messages = promptManager.createCharacterDetailsPrompt(character);
-            const jsonString = await apiHelper.callChatCompletion(messages);
+            let jsonString = await apiHelper.callChatCompletion(messages);
+    
+            const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
+            if (jsonMatch && jsonMatch[0]) {
+                jsonString = jsonMatch[0];
+            }
+    
             const aiDetails = JSON.parse(jsonString);
             console.log("AI 信息已生成:", aiDetails);
             return aiDetails;
@@ -467,6 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("从API获取角色详情失败:", error);
             alert(`AI信息生成失败: ${error.message}`);
             return {
+                englishName: "Error",
                 tags: "获取失败",
                 occupation: "获取失败",
                 quote: "无法连接到AI服务器..."
@@ -490,7 +875,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 id: newId, 
                 createdAt: Date.now(),
                 name: '', charPrompt: '', userPrompt: '',
-                relationship: '邂逅', tags: '', occupation: '', quote: ''
+                relationship: '邂逅', tags: '', occupation: '', quote: '', englishName: ''
             };
             currentEditingCharacterId = newId;
         }
@@ -499,18 +884,13 @@ document.addEventListener('DOMContentLoaded', () => {
         charData.charPrompt = charPromptInput.value;
         charData.userPrompt = userPromptInput.value;
     
-        if (tempAvatarFile) {
+       if (tempAvatarFile) {
             processAndSaveImage(tempAvatarFile, `char_avatar_${charData.id}`);
             tempAvatarFile = null;
         }
         
         if (isNewChar) {
-            const faultyIndex = characters.findIndex(c => !c.name && !c.createdAt);
-            if (faultyIndex > -1) {
-                characters[faultyIndex] = charData;
-            } else {
-                characters.push(charData);
-            }
+            characters.push(charData);
         } else {
             const charIndex = characters.findIndex(c => c.id === currentEditingCharacterId);
             if (charIndex > -1) characters[charIndex] = charData;
@@ -527,6 +907,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 if (loadingOverlay) loadingOverlay.classList.add('visible');
                 const aiDetails = await fetchAiCharacterDetails(charData);
+               charData.englishName = aiDetails.englishName;
                 charData.tags = aiDetails.tags;
                 charData.occupation = aiDetails.occupation;
                 charData.quote = aiDetails.quote;
@@ -865,9 +1246,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const appKeys = apps.map(app => `appIcon${app.id.charAt(0).toUpperCase() + app.id.slice(1)}`);
             const dockKeys = dockItems.map(item => `dockIcon${item.id}`);
             const allStorageKeys = ['wallpaperImage', 'musicWidgetImage', 'decorWidgetImage', 'photoWidgetImage', ...appKeys, ...dockKeys];
+            
             allStorageKeys.forEach(key => dbHelper.loadObject('images', key, (blob) => {
                 if (blob) applyImageFromBlob(key, blob);
             }));
+            
+            dbHelper.loadObject('images', 'userAvatar', (blob) => {
+                if (blob) {
+                    userAvatarUrl = URL.createObjectURL(blob);
+                }
+            });
+
             dbHelper.loadObject('data', 'playlist', (savedPlaylist) => {
                 if (savedPlaylist && savedPlaylist.length > 0) {
                     playlist = savedPlaylist;
@@ -877,6 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadTrack(-1);
                 }
             });
+            
             dbHelper.loadObject('data', 'apiConfigs', (savedConfigs) => {
                 if (savedConfigs && Array.isArray(savedConfigs)) {
                     apiConfigs = savedConfigs;
@@ -887,9 +1277,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateApiStatusUI(false);
                 }
             });
+            
             dbHelper.loadAll('characters', (savedCharacters) => {
                 characters = savedCharacters;
                 renderCharacterList();
+                
+                dbHelper.loadObject('data', 'chatSessions', (savedSessions) => {
+                    if(savedSessions && Array.isArray(savedSessions)) {
+                        chatSessions = savedSessions;
+                    }
+                    renderChatList();
+                });
             });
         });
 
@@ -911,11 +1309,169 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // --- 全局事件监听器 ---
+    chatAppIcon.addEventListener('click', () => {
+        renderChatList();
+        openScreen(chatListScreen);
+    });
+
+    addChatBtn.addEventListener('click', openSelectCharacterModal);
+    
+    closeSelectCharModalBtn.addEventListener('click', () => selectCharacterModal.classList.remove('active'));
+    selectCharacterModal.addEventListener('click', (e) => { if(e.target === selectCharacterModal) selectCharacterModal.classList.remove('active'); });
+
+    selectCharacterList.addEventListener('click', (e) => {
+        const target = e.target.closest('.char-select-item');
+        if (target && target.dataset.charId) {
+            startNewChat(target.dataset.charId);
+        }
+    });
+
+    chatListContainer.addEventListener('click', (e) => {
+        const target = e.target.closest('.chat-list-card');
+        if (!target) return;
+
+        const charId = target.dataset.charId;
+        const character = characters.find(c => c.id === charId);
+        if (!character) return;
+
+        currentChattingCharId = charId;
+        chatHeaderTitle.textContent = character.name;
+
+        const loadHistoryPromise = new Promise((resolve) => {
+            const history = [];
+            const transaction = dbHelper.db.transaction(['chatHistory'], 'readonly');
+            const store = transaction.objectStore('chatHistory');
+            const index = store.index('charId');
+            const request = index.openCursor(IDBKeyRange.only(charId));
+            
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    history.push(cursor.value);
+                    cursor.continue();
+                } else {
+                    resolve(history);
+                }
+            };
+            request.onerror = () => resolve([]);
+        });
+
+        const loadSettingsPromise = new Promise((resolve) => {
+            dbHelper.loadObject('data', 'chatSettings', (settings) => {
+                const charSettings = (settings && settings[charId]) ? settings[charId] : {};
+                resolve({
+                    memoryTurns: charSettings.memoryTurns || 12,
+                });
+            });
+        });
+
+        Promise.all([loadHistoryPromise, loadSettingsPromise]).then(([history, settings]) => {
+            messagesContainer.innerHTML = ''; 
+            currentChatHistory = []; 
+
+            renderMessage(`你已和 ${character.name} 建立对话，开始聊天吧！`, 'system');
+
+            history.forEach(msg => {
+                renderMessage(msg.content, msg.sender);
+                currentChatHistory.push(msg);
+            });
+
+            memoryTurnsSlider.value = settings.memoryTurns;
+            memoryTurnsValue.textContent = `${settings.memoryTurns} 轮`;
+
+            openScreen(chatDialogueScreen);
+            autoScrollToBottom();
+        });
+    });
+
+    chatMoreBtn.addEventListener('click', () => openScreen(chatDetailsScreen));
+
+    chatExpandBtn.addEventListener('click', () => {
+        chatFunctionPanel.classList.toggle('visible');
+    });
+
+    chatTextInput.addEventListener('input', () => {
+        chatTextInput.style.height = 'auto';
+        chatTextInput.style.height = chatTextInput.scrollHeight + 'px';
+
+        if (chatTextInput.value.trim().length > 0) {
+            sendFinalBtn.classList.add('activated');
+        } else {
+            sendFinalBtn.classList.remove('activated');
+        }
+    });
+
+    // (已修正) “羽毛笔”按钮：逐条发送并存入数据库
+    sendBufferBtn.addEventListener('click', () => {
+        const text = chatTextInput.value.trim();
+        if (text) {
+            renderMessage(text, 'user');
+
+            const userMessageData = {
+                charId: currentChattingCharId,
+                sender: 'user',
+                content: text,
+                timestamp: Date.now()
+            };
+            dbHelper.saveObject('chatHistory', userMessageData);
+            currentChatHistory.push(userMessageData);
+
+            updateChatSession(currentChattingCharId, text);
+            
+            chatTextInput.value = '';
+            chatTextInput.style.height = 'auto';
+            sendFinalBtn.classList.remove('activated');
+        }
+    });
+
+    // “信封”按钮，调用新的 handleSendMessage
+    sendFinalBtn.addEventListener('click', handleSendMessage);
+
+    clearHistoryBtn.addEventListener('click', () => {
+        if (!currentChattingCharId) return;
+        if (confirm(`确定要清空与该角色的所有聊天记录吗？此操作不可恢复。`)) {
+            dbHelper.deleteObjectsByIndex('chatHistory', 'charId', IDBKeyRange.only(currentChattingCharId), () => {
+                 messagesContainer.innerHTML = '';
+                 currentChatHistory = [];
+                 closeScreen(chatDetailsScreen);
+            });
+        }
+    });
+
+    deleteChatBtn.addEventListener('click', () => {
+        if (!currentChattingCharId) return;
+        if (confirm(`确定要删除与该角色的整个对话吗？所有聊天记录都将丢失。`)) {
+            const charIdToDelete = currentChattingCharId;
+            chatSessions = chatSessions.filter(s => s.charId !== charIdToDelete);
+            
+            dbHelper.saveObject('data', 'chatSessions', chatSessions);
+            dbHelper.deleteObjectsByIndex('chatHistory', 'charId', IDBKeyRange.only(charIdToDelete), () => {
+                closeScreen(chatDetailsScreen);
+                closeScreen(chatDialogueScreen);
+                renderChatList();
+            });
+        }
+    });
+
     imageUploader.addEventListener('change', (e) => {
         if (!e.target.files || !e.target.files[0]) return;
         const file = e.target.files[0];
         const storageKey = imageUploader.dataset.currentStorageKey;
         const imageType = imageUploader.dataset.imageType;
+    
+        if (imageType === 'userAvatar') {
+            processAndSaveImage(file, storageKey, (blob) => {
+                userAvatarUrl = URL.createObjectURL(blob);
+                const allUserAvatars = document.querySelectorAll('.user-avatar');
+                allUserAvatars.forEach(avatarDiv => {
+                    avatarDiv.classList.remove('empty');
+                    avatarDiv.onclick = null;
+                    avatarDiv.innerHTML = `<img src="${userAvatarUrl}">`;
+                });
+                alert("头像设置成功！");
+            });
+            return;
+        }
     
         if (imageType === 'charAvatar') {
             const previewUrl = URL.createObjectURL(file);
@@ -946,7 +1502,6 @@ document.addEventListener('DOMContentLoaded', () => {
     saveCharBtn.addEventListener('click', saveCharacter);
     deleteCharBtn.addEventListener('click', deleteCharacter);
 
-    // (已修改) 增加了对关系修改区域的点击监听
     characterListContainer.addEventListener('click', (e) => {
         const artUploader = e.target.closest('.ticket-art');
         const editButton = e.target.closest('.ticket-edit-btn');
@@ -992,9 +1547,8 @@ document.addEventListener('DOMContentLoaded', () => {
         imageUploader.click();
     });
 
-    // (新增) 关系修改弹窗的事件监听
     relationshipModal.addEventListener('click', (e) => {
-        if (e.target === relationshipModal) { // 点击遮罩层关闭
+        if (e.target === relationshipModal) {
             closeRelationshipModal();
         }
     });
@@ -1010,7 +1564,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     personalizationAppIcon.addEventListener('click', () => openScreen(personalizationScreen));
     menuChangeIcons.addEventListener('click', () => openScreen(iconChangerScreen));
-    backButtons.forEach(btn => btn.addEventListener('click', (e) => closeScreen(e.target.closest('.app-screen'))));
+    
+    // (最终版) 智能返回按钮
+backButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const screenToClose = e.target.closest('.app-screen');
+
+        // 如果从任何App页面返回到桌面，就清空当前聊天ID
+        currentChattingCharId = null; 
+
+        // 如果是从聊天窗口返回列表，则刷新列表
+        if (screenToClose === chatDialogueScreen || screenToClose === chatDetailsScreen) {
+            renderChatList();
+        }
+
+        closeScreen(screenToClose);
+    });
+});
+
     albumArt.addEventListener('click', () => {
         imageUploader.dataset.currentStorageKey = 'musicWidgetImage';
         imageUploader.dataset.imageType = 'widget';
@@ -1124,6 +1695,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (url) { applyFont(url); }
     });
     fontSizeSlider.addEventListener('input', () => { applyFontSize(fontSizeSlider.value); });
+
+    memoryTurnsSlider.addEventListener('input', () => {
+        memoryTurnsValue.textContent = `${memoryTurnsSlider.value} 轮`;
+    });
+
+    memoryTurnsSlider.addEventListener('change', () => {
+        const turns = parseInt(memoryTurnsSlider.value, 10);
+        
+        dbHelper.loadObject('data', 'chatSettings', (settings) => {
+            const chatSettings = settings || {};
+            
+            if (!chatSettings[currentChattingCharId]) {
+                chatSettings[currentChattingCharId] = {};
+            }
+            chatSettings[currentChattingCharId].memoryTurns = turns;
+            
+            dbHelper.saveObject('data', 'chatSettings', chatSettings);
+        });
+    });
 
     // --- 启动应用 ---
     initializeApp();

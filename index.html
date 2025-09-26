@@ -13,13 +13,16 @@
 </head>
 <body data-theme="light">
 
-    <!-- 隐藏的全局输入框 -->
+    <!-- =============================================== -->
+    <!-- ============== 全局隐藏元素 ================ -->
+    <!-- =============================================== -->
     <input type="file" id="image-uploader" accept="image/*" style="display: none;">
     <input type="file" id="audio-uploader" accept=".mp3,.wav,.m4a,.ogg,.flac" style="display: none;" multiple>
-
-    <!-- 隐藏的音频播放器核心 -->
     <audio id="audio-player"></audio>
 
+    <!-- =============================================== -->
+    <!-- ================ 手机主框架 ================= -->
+    <!-- =============================================== -->
     <div class="phone-wrapper">
         <div class="mobile-frame">
             <div class="status-bar">
@@ -31,6 +34,7 @@
             </div>
 
             <div class="main-content">
+                <!-- ============= 桌面区域 ============= -->
                 <main id="desktop">
                     <div class="widget music-widget" data-storage-key="musicWidgetImage">
                         <div class="album-art" id="music-album-art"></div>
@@ -74,6 +78,7 @@
                     </div>
                 </main>
 
+                <!-- ============== Dock栏 ============= -->
                 <div class="dock">
                     <div class="dock-icon" id="dock-icon-1" data-storage-key="dockIcon1"></div>
                     <div class="dock-icon" id="dock-icon-2" data-storage-key="dockIcon2"></div>
@@ -81,7 +86,11 @@
                     <div class="dock-icon" id="dock-icon-4" data-storage-key="dockIcon4"></div>
                 </div>
                 
-                <!-- 应用屏幕区域 -->
+                <!-- =============================================== -->
+                <!-- ============== 应用屏幕区域 (所有App页面) ======== -->
+                <!-- =============================================== -->
+
+                <!-- 个性化设置 App -->
                 <div class="app-screen" id="screen-personalization">
                     <div class="app-header">
                         <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>美化设置</h1><div class="header-placeholder"></div>
@@ -96,6 +105,7 @@
                     </div>
                 </div>
 
+                <!-- 更换图标页 -->
                 <div class="app-screen" id="screen-icon-changer">
                     <div class="app-header">
                         <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>更换App图标</h1><div class="header-placeholder"></div>
@@ -103,6 +113,7 @@
                     <div class="app-content icon-grid-container"><div class="icon-grid"></div></div>
                 </div>
 
+                <!-- 播放列表页 -->
                 <div class="app-screen" id="screen-playlist">
                     <div class="app-header">
                         <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>播放列表</h1>
@@ -111,6 +122,7 @@
                     <div class="app-content"><ul id="playlist-container" class="playlist-container"></ul></div>
                 </div>
                 
+                <!-- API设置页 -->
                 <div class="app-screen" id="screen-api-settings">
                     <div class="app-header">
                         <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>API接口设置</h1><div class="header-placeholder"></div>
@@ -129,6 +141,7 @@
                     </div>
                 </div>
 
+                <!-- 字体设置页 -->
                 <div class="app-screen" id="screen-font-settings">
                     <div class="app-header">
                         <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>修改字体</h1><div class="header-placeholder"></div>
@@ -144,6 +157,7 @@
                     </div>
                 </div>
 
+                <!-- 角色书 App -->
                 <div class="app-screen" id="screen-character-book">
                     <div class="app-header">
                         <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>角色书</h1>
@@ -153,6 +167,7 @@
                     </div>
                 </div>
 
+                <!-- 角色编辑器 -->
                 <div class="app-screen" id="screen-character-editor">
                     <div class="app-header">
                         <button class="back-btn"><i class="fas fa-chevron-left"></i></button>
@@ -180,10 +195,114 @@
                     </div>
                 </div>
 
-            </div>
-        </div>
-    </div>
-    
+                <!-- (新添加) 聊天应用 - 列表页 -->
+                <div class="app-screen" id="screen-chat-list">
+                    <div class="app-header">
+                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button>
+                        <h1>聊天</h1>
+                        <div class="header-placeholder"><button id="add-chat-btn" class="add-song-btn"><i class="fas fa-plus"></i></button></div>
+                    </div>
+                    <div class="app-content" id="chat-list-container">
+                        <!-- JS将在这里动态生成聊天卡片 -->
+                    </div>
+                </div>
+
+                                <!-- =============================================== -->
+                <!-- ============= 聊天应用 - 对话页 (V2) ========== -->
+                <!-- =============================================== -->
+                <div class="app-screen" id="screen-chat-dialogue">
+                    <div class="app-header transparent"> <!-- 新增 transparent 类 -->
+                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button>
+                        <h1 id="chat-header-title">角色名</h1>
+                        <div class="header-placeholder"><button id="chat-more-btn" class="add-song-btn"><i class="fas fa-ellipsis-h"></i></button></div>
+                    </div>
+
+                    <!-- 消息显示区域 -->
+                    <div class="app-content chat-messages-container" id="chat-messages-container">
+                        <div class="chat-message system">
+                            <div class="message-bubble">
+                                你已和 <span id="system-char-name">角色</span> 建立对话，开始聊天吧！
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 功能拓展面板 (默认隐藏) -->
+                    <div class="chat-function-panel" id="chat-function-panel">
+                        <div class="panel-content">
+                            <p>功能面板施工中...</p>
+                            <!-- 未来在这里添加图片上传、快捷指令等按钮 -->
+                        </div>
+                    </div>
+
+                    <!-- 输入区域 -->
+                    <div class="chat-input-area">
+                        <button id="chat-expand-btn" class="input-action-btn"><i class="fas fa-plus"></i></button>
+                        <textarea id="chat-text-input" placeholder="输入信息..." rows="1"></textarea>
+                        <div class="send-btn-group">
+                            <button id="send-buffer-btn" class="input-action-btn"><i class="fas fa-feather-alt"></i></button>
+                            <button id="send-final-btn" class="input-action-btn send"><i class="fas fa-envelope"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                                <!-- =============================================== -->
+                <!-- =========== 聊天详情页 (V2 - 完整版) ========== -->
+                <!-- =============================================== -->
+                <div class="app-screen" id="screen-chat-details">
+                    <div class="app-header">
+                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button>
+                        <h1>聊天详情</h1>
+                        <div class="header-placeholder"></div>
+                    </div>
+                    <div class="app-content">
+                        <ul class="menu-list chat-settings-list">
+                            <li>
+                                <span>置顶聊天</span>
+                                <div class="switch-container">
+                                    <input type="checkbox" id="pin-chat-switch" class="ios-switch">
+                                    <label for="pin-chat-switch"></label>
+                                </div>
+                            </li>
+                            <li>
+                                <span>隐藏头像</span>
+                                <div class="switch-container">
+                                    <input type="checkbox" id="hide-avatar-switch" class="ios-switch">
+                                    <label for="hide-avatar-switch"></label>
+                                </div>
+                            </li>
+                            <li>
+                                <span>时间感知开关</span>
+                                <div class="switch-container">
+                                    <input type="checkbox" id="time-awareness-switch" class="ios-switch" checked>
+                                    <label for="time-awareness-switch"></label>
+                                </div>
+                            </li>
+                            <!-- =============================================== -->
+                            <!-- =============== 新增：记忆轮数设置 ============== -->
+                            <!-- =============================================== -->
+                            <li class="slider-setting-item">
+                                <div class="setting-label">
+                                    <span>记忆轮数</span>
+                                    <span class="setting-value" id="memory-turns-value">12 轮</span>
+                                </div>
+                                <div class="setting-control">
+                                    <input type="range" id="memory-turns-slider" min="0" max="500" step="2" value="12">
+                                </div>
+                            </li>
+                        </ul>
+                        
+                        <div class="danger-zone">
+                            <button id="clear-history-btn" class="btn-delete full-width">清空聊天记录</button>
+                            <button id="block-char-btn" class="btn-delete full-width">拉黑好友</button>
+                            <button id="delete-chat-btn" class="btn-delete full-width">删除此对话</button>
+                        </div>
+                    </div>
+                </div>
+    <!-- =============================================== -->
+    <!-- ================= 弹窗区域 ================== -->
+    <!-- =============================================== -->
+
+    <!-- 添加歌曲弹窗 -->
     <div id="add-song-modal" class="modal-overlay">
         <div class="modal-content">
             <h2>添加歌曲</h2>
@@ -194,7 +313,7 @@
         </div>
     </div>
 
-    <!-- (这是补全的部分) 关系选择弹窗 -->
+    <!-- 关系选择弹窗 -->
     <div id="relationship-modal" class="modal-overlay">
         <div class="modal-content">
             <h2>选择关系</h2>
@@ -202,6 +321,17 @@
                 <!-- JS 会在这里动态生成选项 -->
             </div>
             <button id="close-relationship-modal-btn" class="modal-close-btn">取消</button>
+        </div>
+    </div>
+    
+    <!-- (新添加) 选择角色发起聊天 - 浮窗 -->
+    <div id="select-character-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>选择一个角色开始聊天</h2>
+            <div id="select-character-list" class="menu-list">
+                <!-- JS将在这里动态生成角色列表 -->
+            </div>
+            <button id="close-select-char-modal-btn" class="modal-close-btn">取消</button>
         </div>
     </div>
 
