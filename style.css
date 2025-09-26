@@ -1283,3 +1283,24 @@ body[data-theme="dark"] .slider-setting-item input[type="range"]::-moz-range-thu
     text-overflow: ellipsis;
     opacity: 0.8;
 }
+/* 自动缩放手机界面以适应屏幕 */
+@media (max-height: 800px) {
+    .phone-wrapper {
+        transform: scale(0.9);
+        transform-origin: top center;
+    }
+}
+
+@media (max-height: 700px) {
+    .phone-wrapper {
+        transform: scale(0.85);
+        transform-origin: top center;
+    }
+}
+
+@media (max-height: 600px) {
+    .phone-wrapper {
+        transform: scale(0.8);
+        transform-origin: top center;
+    }
+}
