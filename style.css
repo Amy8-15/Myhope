@@ -62,7 +62,13 @@ body {
 .status-bar > span:first-child {
     flex-grow: 1;
 }
-.mobile-frame.app-open .status-bar { background-color: var(--app-screen-bg); color: var(--app-screen-text); text-shadow: none; }
+/* --- 修正后的全局规则 --- */
+.mobile-frame.app-open .status-bar {
+    background-color: var(--app-screen-bg);
+    color: var(--app-screen-text);
+    text-shadow: none;
+}
+
 .theme-btn {
     background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-color); text-shadow: var(--text-shadow);
 }
@@ -920,34 +926,37 @@ body[data-theme="dark"] .ticket .loading-overlay {
 }
 .chat-function-panel.visible { max-height: 200px; }
 .chat-function-panel .panel-content { padding: 1rem; color: var(--app-screen-text); }
+/* --- 2. 壁纸激活状态 (最终沉浸式效果) --- */
+/* --- 新增：让顶部的状态栏也透明 --- */
+#screen-chat-dialogue.has-wallpaper .app-header {
+    background-color: transparent; /* 改为完全透明 */
+    backdrop-filter: none;          /* 移除毛玻璃效果 */
+    -webkit-backdrop-filter: none;  /* 移除毛玻璃效果 */
+    border-bottom: none; 
+    color: white; 
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5); /* 保留文字阴影以确保可读性 */
+}
 
-/* --- 2. 壁纸激活状态 --- */
-/* 当 mobile-frame 拥有 has-wallpaper 类时，以下样式生效 */
-.mobile-frame.has-wallpaper #screen-chat-dialogue {
-    background-color: transparent;
-}
-.mobile-frame.has-wallpaper #screen-chat-dialogue .app-header {
-    background-color: rgba(0,0,0,0.2);
-    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-    border-bottom: none; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-}
-.mobile-frame.has-wallpaper #screen-chat-dialogue .app-header .back-btn,
-.mobile-frame.has-wallpaper #screen-chat-dialogue .app-header .add-song-btn {
+#screen-chat-dialogue.has-wallpaper .app-header .back-btn,
+#screen-chat-dialogue.has-wallpaper .app-header .add-song-btn {
     color: white;
 }
-.mobile-frame.has-wallpaper .chat-input-area {
-    background-color: rgba(0,0,0,0.2);
-    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+
+#screen-chat-dialogue.has-wallpaper .chat-input-area {
+    background-color: transparent; /* 改为完全透明 */
+    backdrop-filter: none;          /* 移除毛玻璃效果 */
+    -webkit-backdrop-filter: none;  /* 移除毛玻璃效果 */
     border-top: none;
 }
-.mobile-frame.has-wallpaper #chat-text-input {
+
+#screen-chat-dialogue.has-wallpaper #chat-text-input {
     background-color: rgba(255,255,255,0.2);
     border: none; color: white;
 }
-.mobile-frame.has-wallpaper #chat-text-input::placeholder { color: rgba(255,255,255,0.6); }
-.mobile-frame.has-wallpaper .input-action-btn { color: white; }
-.mobile-frame.has-wallpaper #send-final-btn.activated { color: #57a8ff; }
 
+#screen-chat-dialogue.has-wallpaper #chat-text-input::placeholder { color: rgba(255,255,255,0.6); }
+#screen-chat-dialogue.has-wallpaper .input-action-btn { color: white; }
+#screen-chat-dialogue.has-wallpaper #send-final-btn.activated { color: #57a8ff; }
 
 /* --- 气泡的通用基础样式 --- */
 .message-bubble {
