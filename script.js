@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const applyFontBtn = document.getElementById('apply-font-btn');
     const fontSizeSlider = document.getElementById('font-size-slider');
     const fontSizeValue = document.getElementById('font-size-value');
-    
+
     // 聊天应用DOM元素
     const chatAppIcon = document.getElementById('app-chat');
     const chatListScreen = document.getElementById('screen-chat-list');
@@ -81,7 +81,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteChatBtn = document.getElementById('delete-chat-btn');
     const memoryTurnsSlider = document.getElementById('memory-turns-slider');
     const memoryTurnsValue = document.getElementById('memory-turns-value');
-
+    // ▼▼▼ 在这里添加 ▼▼▼
+    const setChatWallpaperBtn = document.getElementById('set-chat-wallpaper-btn');
+    const clearWallpaperBtn = document.getElementById('clear-wallpaper-btn');
+    // ▲▲▲ 添加结束 ▲▲▲
     // 角色书 DOM 元素获取
     const characterBookApp = document.getElementById('app-character-book');
     const characterBookScreen = document.getElementById('screen-character-book');
@@ -112,10 +115,10 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 'chat', name: '聊天' }, { id: 'worldbook', name: '世界书' },
         { id: 'forum', name: '论坛' }, { id: 'story', name: '剧情' },
         { id: 'settings', name: '设置' }, { id: 'personalization', name: '个性化' },
-        { id: 'character', name: '占位符' }, { id: 'character-book', name: '角色书' }
+        { id: 'character', name: '占位符' }, { id: 'characterBook', name: '角色书' }
     ];
     const dockItems = [{ id: '1', name: 'Dock 1' }, { id: '2', name: 'Dock 2' }, { id: '3', name: 'Dock 3' }, { id: '4', name: 'Dock 4' }];
-    
+
     // 全局状态变量
     let playlist = [];
     let currentTrackIndex = -1;
@@ -133,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentEditingCharacterId = null;
     let tempAvatarFile = null;
     let currentEditingRelationshipCharId = null;
-    
+
     // (新增) 通知中心状态变量
     let notificationQueue = [];
     let isBannerVisible = false;
@@ -225,9 +228,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!activeApi) {
                 throw new Error("没有找到有效的API配置。请检查设置。");
             }
-    
+
             const { url, key, selectedModel } = activeApi;
-    
+
             let endpoint = url.trim();
             if (endpoint.endsWith('/')) {
                 endpoint = endpoint.slice(0, -1);
@@ -238,12 +241,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 endpoint = `${endpoint}/v1/chat/completions`;
             }
-    
+
             const body = JSON.stringify({
                 model: selectedModel,
                 messages: messages,
             });
-    
+
             try {
                 const response = await fetch(endpoint, {
                     method: 'POST',
@@ -253,20 +256,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     body: body
                 });
-    
+
                 if (!response.ok) {
                     const errorBody = await response.text();
                     throw new Error(`API请求失败，状态码 ${response.status}: ${errorBody}`);
                 }
-    
+
                 const data = await response.json();
-                
+
                 if (data.choices && data.choices[0] && data.choices[0].message) {
                     return data.choices[0].message.content;
                 } else {
                     throw new Error("API返回数据格式无效。");
                 }
-    
+
             } catch (error) {
                 console.error("API 调用失败:", error);
                 throw error;
@@ -287,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
         createChatPrompt(character, chatHistory, finalUserInput) {
             let historySection = '';
             const worldBookSection = '[世界书功能尚未激活，当前无世界背景设定]';
-            
+
             if (chatHistory && chatHistory.length > 0) {
                 historySection = chatHistory.map(msg => `${msg.sender === 'user' ? '用户' : character.name}: ${msg.content}`).join('\n');
             } else {
@@ -341,10 +344,27 @@ ${historySection}
         const sec = Math.floor(seconds % 60).toString().padStart(2, '0');
         return isNaN(min) ? '0:00' : `${min}:${sec}`;
     }
-    
+
     function autoScrollToBottom() {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
+
+    // ▼▼▼ 在这里添加 ▼▼▼
+    function applyChatWallpaper(blob) {
+    const wallpaperUrl = URL.createObjectURL(blob);
+    // 直接将背景设置在聊天屏幕上，而不是整个手机框架
+    chatDialogueScreen.style.backgroundImage = `url(${wallpaperUrl})`;
+    chatDialogueScreen.style.backgroundSize = 'cover';
+    chatDialogueScreen.style.backgroundPosition = 'center';
+    // 同时，将用于改变样式的类名也加在聊天屏幕上
+    chatDialogueScreen.classList.add('has-wallpaper');
+}
+
+    function removeChatWallpaper() {
+    // 只清除聊天屏幕的背景和类名，不再影响手机主框架
+    chatDialogueScreen.style.backgroundImage = '';
+    chatDialogueScreen.classList.remove('has-wallpaper');}
+    // ▲▲▲ 添加结束 ▲▲▲
 
     // =======================================================
     // ============== (新) 通知中心系统 ======================
@@ -402,7 +422,7 @@ ${historySection}
             setTimeout(() => {
                 isBannerVisible = false;
                 processNotificationQueue();
-            }, 400); 
+            }, 400);
         }, 4000);
     }
 
@@ -430,14 +450,14 @@ ${historySection}
                 <div class="card-content">
                     <div class="card-title">
                         <span class="char-name">${character.name}</span>
-                        <span class="last-msg-time">${new Date(session.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        <span class="last-msg-time">${new Date(session.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <p class="last-msg-preview">${session.lastMessage}</p>
                 </div>
             `;
             card.innerHTML = cardContent;
             chatListContainer.appendChild(card);
-            
+
             const avatarImg = card.querySelector('.avatar');
             dbHelper.loadObject('images', `char_avatar_${character.id}`, (blob) => {
                 if (blob) {
@@ -451,7 +471,7 @@ ${historySection}
 
     function openSelectCharacterModal() {
         selectCharacterList.innerHTML = '';
-        
+
         const existingChatCharIds = chatSessions.map(s => s.charId);
         const availableCharacters = characters.filter(c => !existingChatCharIds.includes(c.id));
 
@@ -464,7 +484,7 @@ ${historySection}
                 li.dataset.charId = char.id;
                 li.innerHTML = `<img src="" alt="头像"><span>${char.name}</span>`;
                 selectCharacterList.appendChild(li);
-                
+
                 const avatarImg = li.querySelector('img');
                 dbHelper.loadObject('images', `char_avatar_${char.id}`, (blob) => {
                     if (blob) avatarImg.src = URL.createObjectURL(blob);
@@ -530,13 +550,13 @@ ${historySection}
             messageBody.className = 'message-bubble';
             messageBody.textContent = content;
         }
-        
+
         if (sender !== 'system') messageDiv.appendChild(avatar);
         messageDiv.appendChild(messageBody);
         messagesContainer.appendChild(messageDiv);
         autoScrollToBottom();
     }
-    
+
     function updateChatSession(charId, lastMessage) {
         const sessionIndex = chatSessions.findIndex(s => s.charId === charId);
         if (sessionIndex > -1) {
@@ -547,84 +567,84 @@ ${historySection}
     }
 
     // (终极版 - 修复桌面无通知 & 恢复逐条显示)
-async function handleSendMessage() {
-    const characterIdForThisRequest = currentChattingCharId;
+    async function handleSendMessage() {
+        const characterIdForThisRequest = currentChattingCharId;
 
-    if (!characterIdForThisRequest || currentChatHistory.length === 0) {
-        console.warn("没有聊天对象或聊天记录，无法回复。");
-        return;
-    }
-
-    const typingIndicator = document.createElement('div');
-    typingIndicator.id = 'typing-indicator';
-    typingIndicator.className = 'chat-message character typing-indicator';
-    typingIndicator.innerHTML = `<div class="avatar"></div> <div class="message-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
-    messagesContainer.appendChild(typingIndicator);
-    autoScrollToBottom();
-    const indicatorAvatar = typingIndicator.querySelector('.avatar');
-    dbHelper.loadObject('images', `char_avatar_${characterIdForThisRequest}`, (blob) => {
-        if(blob && indicatorAvatar) indicatorAvatar.innerHTML = `<img src="${URL.createObjectURL(blob)}">`;
-    });
-
-    try {
-        const character = characters.find(c => c.id === characterIdForThisRequest);
-        if (!character) throw new Error("当前聊天角色未找到！");
-        
-        let lastUserMessages = [];
-        for (let i = currentChatHistory.length - 1; i >= 0; i--) {
-            if (currentChatHistory[i].sender === 'user') { lastUserMessages.unshift(currentChatHistory[i].content); } 
-            else { break; }
+        if (!characterIdForThisRequest || currentChatHistory.length === 0) {
+            console.warn("没有聊天对象或聊天记录，无法回复。");
+            return;
         }
-        const finalUserInput = lastUserMessages.join('\n');
-        if (!finalUserInput) { typingIndicator.remove(); return; }
 
-        const memoryTurns = parseInt(memoryTurnsSlider.value, 10);
-        const historyForPrompt = memoryTurns > 0 ? currentChatHistory.slice(0, -lastUserMessages.length).slice(-memoryTurns * 2) : [];
-        const messages = promptManager.createChatPrompt(character, historyForPrompt, finalUserInput);
+        const typingIndicator = document.createElement('div');
+        typingIndicator.id = 'typing-indicator';
+        typingIndicator.className = 'chat-message character typing-indicator';
+        typingIndicator.innerHTML = `<div class="avatar"></div> <div class="message-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+        messagesContainer.appendChild(typingIndicator);
+        autoScrollToBottom();
+        const indicatorAvatar = typingIndicator.querySelector('.avatar');
+        dbHelper.loadObject('images', `char_avatar_${characterIdForThisRequest}`, (blob) => {
+            if (blob && indicatorAvatar) indicatorAvatar.innerHTML = `<img src="${URL.createObjectURL(blob)}">`;
+        });
 
-        const aiResponse = await apiHelper.callChatCompletion(messages);
-        const replies = aiResponse.split('\n').filter(line => line.trim() !== '');
-        if (replies.length === 0) { typingIndicator.remove(); return; }
+        try {
+            const character = characters.find(c => c.id === characterIdForThisRequest);
+            if (!character) throw new Error("当前聊天角色未找到！");
 
-        for (const replyContent of replies) {
-            const aiMessageData = { charId: characterIdForThisRequest, sender: 'character', content: replyContent, timestamp: Date.now() };
-            dbHelper.saveObject('chatHistory', aiMessageData);
-        }
-        
-        const finalReply = replies[replies.length - 1];
-        updateChatSession(characterIdForThisRequest, finalReply);
+            let lastUserMessages = [];
+            for (let i = currentChatHistory.length - 1; i >= 0; i--) {
+                if (currentChatHistory[i].sender === 'user') { lastUserMessages.unshift(currentChatHistory[i].content); }
+                else { break; }
+            }
+            const finalUserInput = lastUserMessages.join('\n');
+            if (!finalUserInput) { typingIndicator.remove(); return; }
 
-        // ▼▼▼ (修复) 终极版的“门卫”检查 ▼▼▼
-        // 检查：1. 用户是否切换了聊天对象？ OR 2. 聊天窗口是否已经关闭？
-        if (characterIdForThisRequest !== currentChattingCharId || !chatDialogueScreen.classList.contains('active')) {
+            const memoryTurns = parseInt(memoryTurnsSlider.value, 10);
+            const historyForPrompt = memoryTurns > 0 ? currentChatHistory.slice(0, -lastUserMessages.length).slice(-memoryTurns * 2) : [];
+            const messages = promptManager.createChatPrompt(character, historyForPrompt, finalUserInput);
+
+            const aiResponse = await apiHelper.callChatCompletion(messages);
+            const replies = aiResponse.split('\n').filter(line => line.trim() !== '');
+            if (replies.length === 0) { typingIndicator.remove(); return; }
+
+            for (const replyContent of replies) {
+                const aiMessageData = { charId: characterIdForThisRequest, sender: 'character', content: replyContent, timestamp: Date.now() };
+                dbHelper.saveObject('chatHistory', aiMessageData);
+            }
+
+            const finalReply = replies[replies.length - 1];
+            updateChatSession(characterIdForThisRequest, finalReply);
+
+            // ▼▼▼ (修复) 终极版的“门卫”检查 ▼▼▼
+            // 检查：1. 用户是否切换了聊天对象？ OR 2. 聊天窗口是否已经关闭？
+            if (characterIdForThisRequest !== currentChattingCharId || !chatDialogueScreen.classList.contains('active')) {
+                typingIndicator.remove();
+                addNotificationToQueue({ type: 'chat_reply', charId: characterIdForThisRequest, message: finalReply });
+                return;
+            }
+
             typingIndicator.remove();
-            addNotificationToQueue({ type: 'chat_reply', charId: characterIdForThisRequest, message: finalReply });
-            return; 
-        }
 
-        typingIndicator.remove();
-        
-        // ▼▼▼ (修复) 恢复逐条显示效果 ▼▼▼
-        for (let i = 0; i < replies.length; i++) {
-            const replyContent = replies[i];
-            renderMessage(replyContent, 'character');
-            const aiMessageData = { charId: characterIdForThisRequest, sender: 'character', content: replyContent, timestamp: Date.now() };
-            currentChatHistory.push(aiMessageData);
+            // ▼▼▼ (修复) 恢复逐条显示效果 ▼▼▼
+            for (let i = 0; i < replies.length; i++) {
+                const replyContent = replies[i];
+                renderMessage(replyContent, 'character');
+                const aiMessageData = { charId: characterIdForThisRequest, sender: 'character', content: replyContent, timestamp: Date.now() };
+                currentChatHistory.push(aiMessageData);
 
-            // 在渲染最后一条消息之前，都停顿一下
-            if (i < replies.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // 在渲染最后一条消息之前，都停顿一下
+                if (i < replies.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+
+        } catch (error) {
+            if (characterIdForThisRequest === currentChattingCharId) {
+                typingIndicator.remove();
+                renderMessage(`[错误] 无法获取回复: ${error.message}`, 'system');
             }
         }
-
-    } catch (error) {
-        if (characterIdForThisRequest === currentChattingCharId) {
-            typingIndicator.remove();
-            renderMessage(`[错误] 无法获取回复: ${error.message}`, 'system');
-        }
     }
-}
-    
+
     function processAndSaveImage(file, storageKey, callback) {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -632,8 +652,9 @@ async function handleSendMessage() {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                const MAX_WIDTH = storageKey === 'wallpaperImage' ? 1080 : 512;
-                const MAX_HEIGHT = storageKey === 'wallpaperImage' ? 1920 : 512;
+                const isWallpaper = storageKey.startsWith('wallpaperImage') || storageKey.startsWith('chat_wallpaper_');
+const MAX_WIDTH = isWallpaper ? 1080 : 512;
+const MAX_HEIGHT = isWallpaper ? 1920 : 512;
                 let { width, height } = img;
                 if (width > height) {
                     if (width > MAX_WIDTH) {
@@ -800,9 +821,9 @@ async function handleSendMessage() {
         }
         closeRelationshipModal();
     }
-    
+
     function openCharacterEditor(charId = null) {
-        tempAvatarFile = null; 
+        tempAvatarFile = null;
         currentEditingCharacterId = charId;
         charAvatarUploader.style.backgroundImage = '';
         charAvatarUploader.innerHTML = '<i class="fas fa-camera"></i>';
@@ -810,7 +831,7 @@ async function handleSendMessage() {
         charPromptInput.value = '';
         userPromptInput.value = '';
         deleteCharBtn.style.display = 'none';
-    
+
         if (charId) {
             const char = characters.find(c => c.id === charId);
             if (char) {
@@ -832,18 +853,18 @@ async function handleSendMessage() {
         }
         openScreen(characterEditorScreen);
     }
-    
+
     async function fetchAiCharacterDetails(character) {
         console.log("正在为角色生成AI信息:", character.name);
         try {
             const messages = promptManager.createCharacterDetailsPrompt(character);
             let jsonString = await apiHelper.callChatCompletion(messages);
-    
+
             const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
             if (jsonMatch && jsonMatch[0]) {
                 jsonString = jsonMatch[0];
             }
-    
+
             const aiDetails = JSON.parse(jsonString);
             console.log("AI 信息已生成:", aiDetails);
             return aiDetails;
@@ -862,33 +883,33 @@ async function handleSendMessage() {
     async function saveCharacter() {
         const name = charNameInput.value.trim();
         if (!name) { alert('角色姓名不能为空！'); return; }
-    
+
         let isNewChar = false;
         let charData;
-        
+
         if (currentEditingCharacterId) {
             charData = characters.find(c => c.id === currentEditingCharacterId);
         } else {
             isNewChar = true;
             const newId = `char_${Date.now()}`;
-            charData = { 
-                id: newId, 
+            charData = {
+                id: newId,
                 createdAt: Date.now(),
                 name: '', charPrompt: '', userPrompt: '',
                 relationship: '邂逅', tags: '', occupation: '', quote: '', englishName: ''
             };
             currentEditingCharacterId = newId;
         }
-    
+
         charData.name = name;
         charData.charPrompt = charPromptInput.value;
         charData.userPrompt = userPromptInput.value;
-    
-       if (tempAvatarFile) {
+
+        if (tempAvatarFile) {
             processAndSaveImage(tempAvatarFile, `char_avatar_${charData.id}`);
             tempAvatarFile = null;
         }
-        
+
         if (isNewChar) {
             characters.push(charData);
         } else {
@@ -899,15 +920,15 @@ async function handleSendMessage() {
         dbHelper.saveObject('characters', charData);
         renderCharacterList();
         closeScreen(characterEditorScreen);
-        
+
         if (isNewChar) {
             const ticketElement = document.querySelector(`.ticket[data-id="${charData.id}"]`);
             const loadingOverlay = ticketElement?.querySelector('.loading-overlay');
-            
+
             try {
                 if (loadingOverlay) loadingOverlay.classList.add('visible');
                 const aiDetails = await fetchAiCharacterDetails(charData);
-               charData.englishName = aiDetails.englishName;
+                charData.englishName = aiDetails.englishName;
                 charData.tags = aiDetails.tags;
                 charData.occupation = aiDetails.occupation;
                 charData.quote = aiDetails.quote;
@@ -992,7 +1013,7 @@ async function handleSendMessage() {
         }
         currentTimeEl.textContent = formatTime(currentTime);
     }
-    
+
     function renderPlaylist() {
         playlistContainer.innerHTML = '';
         if (playlist.length === 0) {
@@ -1246,11 +1267,11 @@ async function handleSendMessage() {
             const appKeys = apps.map(app => `appIcon${app.id.charAt(0).toUpperCase() + app.id.slice(1)}`);
             const dockKeys = dockItems.map(item => `dockIcon${item.id}`);
             const allStorageKeys = ['wallpaperImage', 'musicWidgetImage', 'decorWidgetImage', 'photoWidgetImage', ...appKeys, ...dockKeys];
-            
+
             allStorageKeys.forEach(key => dbHelper.loadObject('images', key, (blob) => {
                 if (blob) applyImageFromBlob(key, blob);
             }));
-            
+
             dbHelper.loadObject('images', 'userAvatar', (blob) => {
                 if (blob) {
                     userAvatarUrl = URL.createObjectURL(blob);
@@ -1266,7 +1287,7 @@ async function handleSendMessage() {
                     loadTrack(-1);
                 }
             });
-            
+
             dbHelper.loadObject('data', 'apiConfigs', (savedConfigs) => {
                 if (savedConfigs && Array.isArray(savedConfigs)) {
                     apiConfigs = savedConfigs;
@@ -1277,13 +1298,13 @@ async function handleSendMessage() {
                     updateApiStatusUI(false);
                 }
             });
-            
+
             dbHelper.loadAll('characters', (savedCharacters) => {
                 characters = savedCharacters;
                 renderCharacterList();
-                
+
                 dbHelper.loadObject('data', 'chatSessions', (savedSessions) => {
-                    if(savedSessions && Array.isArray(savedSessions)) {
+                    if (savedSessions && Array.isArray(savedSessions)) {
                         chatSessions = savedSessions;
                     }
                     renderChatList();
@@ -1307,7 +1328,7 @@ async function handleSendMessage() {
         updateTime();
         setInterval(updateTime, 60000);
     }
-    
+
     // --- 全局事件监听器 ---
     chatAppIcon.addEventListener('click', () => {
         renderChatList();
@@ -1315,9 +1336,9 @@ async function handleSendMessage() {
     });
 
     addChatBtn.addEventListener('click', openSelectCharacterModal);
-    
+
     closeSelectCharModalBtn.addEventListener('click', () => selectCharacterModal.classList.remove('active'));
-    selectCharacterModal.addEventListener('click', (e) => { if(e.target === selectCharacterModal) selectCharacterModal.classList.remove('active'); });
+    selectCharacterModal.addEventListener('click', (e) => { if (e.target === selectCharacterModal) selectCharacterModal.classList.remove('active'); });
 
     selectCharacterList.addEventListener('click', (e) => {
         const target = e.target.closest('.char-select-item');
@@ -1343,7 +1364,7 @@ async function handleSendMessage() {
             const store = transaction.objectStore('chatHistory');
             const index = store.index('charId');
             const request = index.openCursor(IDBKeyRange.only(charId));
-            
+
             request.onsuccess = (event) => {
                 const cursor = event.target.result;
                 if (cursor) {
@@ -1366,8 +1387,18 @@ async function handleSendMessage() {
         });
 
         Promise.all([loadHistoryPromise, loadSettingsPromise]).then(([history, settings]) => {
-            messagesContainer.innerHTML = ''; 
-            currentChatHistory = []; 
+            // ▼▼▼ 在这里添加 ▼▼▼
+            dbHelper.loadObject('images', `chat_wallpaper_${charId}`, (blob) => {
+                if (blob) {
+                    applyChatWallpaper(blob);
+                } else {
+                    removeChatWallpaper();
+                }
+            });
+            // ▲▲▲ 添加结束 ▲▲▲
+
+            messagesContainer.innerHTML = '';
+            currentChatHistory = [];
 
             renderMessage(`你已和 ${character.name} 建立对话，开始聊天吧！`, 'system');
 
@@ -1417,7 +1448,7 @@ async function handleSendMessage() {
             currentChatHistory.push(userMessageData);
 
             updateChatSession(currentChattingCharId, text);
-            
+
             chatTextInput.value = '';
             chatTextInput.style.height = 'auto';
             sendFinalBtn.classList.remove('activated');
@@ -1431,9 +1462,9 @@ async function handleSendMessage() {
         if (!currentChattingCharId) return;
         if (confirm(`确定要清空与该角色的所有聊天记录吗？此操作不可恢复。`)) {
             dbHelper.deleteObjectsByIndex('chatHistory', 'charId', IDBKeyRange.only(currentChattingCharId), () => {
-                 messagesContainer.innerHTML = '';
-                 currentChatHistory = [];
-                 closeScreen(chatDetailsScreen);
+                messagesContainer.innerHTML = '';
+                currentChatHistory = [];
+                closeScreen(chatDetailsScreen);
             });
         }
     });
@@ -1443,7 +1474,7 @@ async function handleSendMessage() {
         if (confirm(`确定要删除与该角色的整个对话吗？所有聊天记录都将丢失。`)) {
             const charIdToDelete = currentChattingCharId;
             chatSessions = chatSessions.filter(s => s.charId !== charIdToDelete);
-            
+
             dbHelper.saveObject('data', 'chatSessions', chatSessions);
             dbHelper.deleteObjectsByIndex('chatHistory', 'charId', IDBKeyRange.only(charIdToDelete), () => {
                 closeScreen(chatDetailsScreen);
@@ -1458,7 +1489,7 @@ async function handleSendMessage() {
         const file = e.target.files[0];
         const storageKey = imageUploader.dataset.currentStorageKey;
         const imageType = imageUploader.dataset.imageType;
-    
+
         if (imageType === 'userAvatar') {
             processAndSaveImage(file, storageKey, (blob) => {
                 userAvatarUrl = URL.createObjectURL(blob);
@@ -1472,7 +1503,7 @@ async function handleSendMessage() {
             });
             return;
         }
-    
+
         if (imageType === 'charAvatar') {
             const previewUrl = URL.createObjectURL(file);
             charAvatarUploader.style.backgroundImage = `url(${previewUrl})`;
@@ -1484,14 +1515,24 @@ async function handleSendMessage() {
             }
             return;
         }
-    
+
         if (imageType === 'ticketArt') {
             processAndSaveImage(file, storageKey, (blob) => {
                 renderCharacterList();
             });
             return;
         }
-    
+
+        // ▼▼▼ 在 `return;` 之前添加一个新的 `if` 块 ▼▼▼
+        if (imageType === 'chatWallpaper') {
+            processAndSaveImage(file, storageKey, (blob) => {
+                applyChatWallpaper(blob);
+                alert("壁纸设置成功！");
+            });
+            return;
+        }
+        // ▲▲▲ 添加结束 ▲▲▲
+
         processAndSaveImage(file, storageKey, (blob) => {
             applyImageFromBlob(storageKey, blob);
         });
@@ -1506,7 +1547,7 @@ async function handleSendMessage() {
         const artUploader = e.target.closest('.ticket-art');
         const editButton = e.target.closest('.ticket-edit-btn');
         const relationshipWrapper = e.target.closest('.relationship-wrapper');
-    
+
         if (artUploader) {
             e.stopPropagation();
             const charId = artUploader.dataset.artId;
@@ -1525,7 +1566,7 @@ async function handleSendMessage() {
             openRelationshipModal(charId);
         }
     });
-    
+
     characterListContainer.addEventListener('focusout', (e) => {
         const editableField = e.target.closest('.editable-field');
         if (editableField) {
@@ -1564,24 +1605,47 @@ async function handleSendMessage() {
 
     personalizationAppIcon.addEventListener('click', () => openScreen(personalizationScreen));
     menuChangeIcons.addEventListener('click', () => openScreen(iconChangerScreen));
-    
+
     // (最终版) 智能返回按钮
-backButtons.forEach(btn => {
+    backButtons.forEach(btn => {
     btn.addEventListener('click', (e) => {
         const screenToClose = e.target.closest('.app-screen');
+        if (!screenToClose) return;
 
-        // 如果从任何App页面返回到桌面，就清空当前聊天ID
-        currentChattingCharId = null; 
+        // --- 新的逻辑判断 ---
 
-        // 如果是从聊天窗口返回列表，则刷新列表
-        if (screenToClose === chatDialogueScreen || screenToClose === chatDetailsScreen) {
+        // 情况一：从【聊天详情页】返回【聊天对话页】
+        if (screenToClose === chatDetailsScreen) {
+            // 这个时候，我们不应该清除壁纸，而是应该重新加载一次，确保设置的新壁纸能立即显示
+            if (currentChattingCharId) {
+                dbHelper.loadObject('images', `chat_wallpaper_${currentChattingCharId}`, (blob) => {
+                    if (blob) {
+                        applyChatWallpaper(blob);
+                    } else {
+                        removeChatWallpaper();
+                    }
+                });
+            }
+            // 注意：此时我们不清除 currentChattingCharId，因为我们还在聊天中
+        }
+        // 情况二：从【聊天对话页】返回【聊天列表页】
+        else if (screenToClose === chatDialogueScreen) {
+            // 这个时候，我们才需要真正地清除聊天壁纸，并刷新列表
             renderChatList();
+            removeChatWallpaper();
+            // 并且，因为已经退出了具体的聊天，所以在这里清除当前聊天ID是安全的
+            currentChattingCharId = null;
+        }
+        // 情况三：从【聊天列表页】返回【主屏幕】
+        else if (screenToClose === chatListScreen) {
+             // 此时也应该清除ID，以防万一
+             currentChattingCharId = null;
         }
 
+        // 最后，统一执行关闭屏幕的操作
         closeScreen(screenToClose);
     });
 });
-
     albumArt.addEventListener('click', () => {
         imageUploader.dataset.currentStorageKey = 'musicWidgetImage';
         imageUploader.dataset.imageType = 'widget';
@@ -1610,7 +1674,7 @@ backButtons.forEach(btn => {
     audioPlayer.addEventListener('timeupdate', updateProgress);
     audioPlayer.addEventListener('play', () => { isPlaying = true; playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>'; renderPlaylist(); });
     audioPlayer.addEventListener('pause', () => { isPlaying = false; playPauseBtn.innerHTML = '<i class="fas fa-play"></i>'; renderPlaylist(); });
-    audioPlayer.addEventListener('ended', () => { (playMode === 'repeat-one') ? loadTrack(currentTrackIndex, true): playNext(); });
+    audioPlayer.addEventListener('ended', () => { (playMode === 'repeat-one') ? loadTrack(currentTrackIndex, true) : playNext(); });
     playModeBtn.addEventListener('click', () => {
         const currentModeIndex = playModes.indexOf(playMode);
         playMode = playModes[(currentModeIndex + 1) % playModes.length];
@@ -1655,7 +1719,7 @@ backButtons.forEach(btn => {
 
     menuApiSettings.addEventListener('click', () => openScreen(apiSettingsScreen));
     fetchModelsBtn.addEventListener('click', fetchModels);
-    
+
     saveApiBtn.addEventListener('click', () => {
         const newConfig = {
             id: `api_${Date.now()}`,
@@ -1677,8 +1741,8 @@ backButtons.forEach(btn => {
         if (deleteBtn) {
             const idToDelete = deleteBtn.dataset.id;
             apiConfigs = apiConfigs.filter(config => config.id !== idToDelete);
-            if (activeApiId === idToDelete) { 
-                activeApiId = apiConfigs.length > 0 ? apiConfigs[0].id : null; 
+            if (activeApiId === idToDelete) {
+                activeApiId = apiConfigs.length > 0 ? apiConfigs[0].id : null;
             }
             saveApiConfigsToDB();
             renderApiList();
@@ -1702,18 +1766,36 @@ backButtons.forEach(btn => {
 
     memoryTurnsSlider.addEventListener('change', () => {
         const turns = parseInt(memoryTurnsSlider.value, 10);
-        
+
         dbHelper.loadObject('data', 'chatSettings', (settings) => {
             const chatSettings = settings || {};
-            
+
             if (!chatSettings[currentChattingCharId]) {
                 chatSettings[currentChattingCharId] = {};
             }
             chatSettings[currentChattingCharId].memoryTurns = turns;
-            
+
             dbHelper.saveObject('data', 'chatSettings', chatSettings);
         });
     });
+
+    // ▼▼▼ 在这里添加 ▼▼▼
+    setChatWallpaperBtn.addEventListener('click', () => {
+        if (currentChattingCharId) {
+            imageUploader.dataset.currentStorageKey = `chat_wallpaper_${currentChattingCharId}`;
+            imageUploader.dataset.imageType = 'chatWallpaper';
+            imageUploader.click();
+        }
+    });
+
+    clearWallpaperBtn.addEventListener('click', () => {
+        if (currentChattingCharId && confirm('确定要清除当前聊天背景吗？')) {
+            dbHelper.deleteObject('images', `chat_wallpaper_${currentChattingCharId}`);
+            removeChatWallpaper();
+            alert('壁纸已清除。');
+        }
+    });
+    // ▲▲▲ 添加结束 ▲▲▲
 
     // --- 启动应用 ---
     initializeApp();
