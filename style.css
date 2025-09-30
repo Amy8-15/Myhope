@@ -68,7 +68,6 @@ body {
     color: var(--app-screen-text);
     text-shadow: none;
 }
-
 .theme-btn {
     background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-color); text-shadow: var(--text-shadow);
 }
@@ -1304,4 +1303,37 @@ body[data-theme="dark"] .slider-setting-item input[type="range"]::-moz-range-thu
     overflow: hidden;
     text-overflow: ellipsis;
     opacity: 0.8;
+}
+/* =============================================== */
+/* ============= 最终版：沉浸式聊天壁纸修复 ============= */
+/* =============================================== */
+
+/* 规则1：当沉浸模式激活时，让状态栏背景透明，文字变白加阴影 */
+.mobile-frame.immersive-chat-active .status-bar {
+    background-color: transparent !important;
+    color: white !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* 同时确保状态栏里的按钮也适配白色主题 */
+.mobile-frame.immersive-chat-active .status-bar .theme-btn {
+    color: white !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+}
+
+
+/* 规则2：这是核心！将整个聊天屏幕向上平移，使其“顶”到手机顶部 */
+.mobile-frame.immersive-chat-active #screen-chat-dialogue {
+    /* 使用 transform 向上移动 3rem (即状态栏的高度) */
+    transform: translateY(-3rem);
+    /* 同时增加自身高度，填补下方的空缺，防止底部出现白边 */
+    height: calc(100% + 3rem);
+}
+
+
+/* 规则3：最后，为聊天页的顶部标题栏增加内边距，把它“推”下来， */
+/* 防止返回按钮和角色名被状态栏的“时间/信号”文字遮挡 */
+.mobile-frame.immersive-chat-active #screen-chat-dialogue .app-header {
+    /* 增加的内边距 = 状态栏高度(3rem) + 原有内边距(1rem) */
+    padding-top: 4rem;
 }

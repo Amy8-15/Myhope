@@ -358,12 +358,16 @@ ${historySection}
     chatDialogueScreen.style.backgroundPosition = 'center';
     // 同时，将用于改变样式的类名也加在聊天屏幕上
     chatDialogueScreen.classList.add('has-wallpaper');
+
+mobileFrame.classList.add('immersive-chat-active');
 }
 
     function removeChatWallpaper() {
     // 只清除聊天屏幕的背景和类名，不再影响手机主框架
     chatDialogueScreen.style.backgroundImage = '';
-    chatDialogueScreen.classList.remove('has-wallpaper');}
+    chatDialogueScreen.classList.remove('has-wallpaper');
+
+mobileFrame.classList.remove('immersive-chat-active');}
     // ▲▲▲ 添加结束 ▲▲▲
 
     // =======================================================
