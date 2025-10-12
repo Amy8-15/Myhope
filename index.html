@@ -29,7 +29,7 @@
                 <span id="time">12:50</span>
                 <span id="api-status-indicator" class="api-status offline">Offline</span>
                 <div class="status-icons">
-                    <button id="theme-toggle-btn" class="theme-btn"><i class="fas fa-sun"></i></button>
+                    <button id="theme-toggle-btn" class="theme-btn" aria-label="切换主题"><i class="fas fa-sun"></i></button>
                 </div>
             </div>
 
@@ -38,7 +38,7 @@
 <!-- =============================================== -->
 <div id="notification-banner" class="notification-banner">
     <div class="banner-avatar-container">
-        <img id="banner-avatar" src="" alt="avatar">
+        <img id="banner-avatar" src="" alt="通知发送者头像">
     </div>
     <div class="banner-content">
         <span id="banner-char-name" class="banner-char-name">角色名</span>
@@ -54,17 +54,17 @@
                         <div class="song-info">
                             <div class="top-info">
                                 <p id="song-title" class="song-title">未选择歌曲</p>
-                                <button id="playlist-btn" class="side-btn"><i class="fas fa-list-ul"></i></button>
+                                <button id="playlist-btn" class="side-btn" aria-label="打开播放列表"><i class="fas fa-list-ul"></i></button>
                             </div>
                             <div class="progress-section">
                                 <div class="progress-container"><div id="progress-bar" class="progress-bar"></div></div>
                                 <div class="time-display"><span id="current-time">0:00</span><span id="total-time">0:00</span></div>
                             </div>
                             <div class="controls">
-                                <button id="prev-btn" class="control-btn"><i class="fas fa-backward-step"></i></button>
-                                <button id="play-pause-btn" class="control-btn play"><i class="fas fa-play"></i></button>
-                                <button id="next-btn" class="control-btn"><i class="fas fa-forward-step"></i></button>
-                                <button id="play-mode-btn" class="control-btn mode"><i class="fas fa-redo"></i></button>
+                                <button id="prev-btn" class="control-btn" aria-label="上一首"><i class="fas fa-backward-step"></i></button>
+                                <button id="play-pause-btn" class="control-btn play" aria-label="播放或暂停"><i class="fas fa-play"></i></button>
+                                <button id="next-btn" class="control-btn" aria-label="下一首"><i class="fas fa-forward-step"></i></button>
+                                <button id="play-mode-btn" class="control-btn mode" aria-label="切换播放模式"><i class="fas fa-redo"></i></button>
                             </div>
                         </div>
                     </div>
@@ -86,27 +86,27 @@
                     <div class="app-icon" id="app-character-book"><div class="icon-bg gradient-3" data-storage-key="appIconCharacterBook"></div><span>角色书</span></div>
 
                     <div class="widget photo-widget" id="widget-photo" data-storage-key="photoWidgetImage">
-                        <div class="polaroid"><img class="photo-content" id="photo-content-img" src="" alt=""></div>
+                        <div class="polaroid"><img class="photo-content" id="photo-content-img" src="" alt="照片小组件内容"></div>
                         <span class="widget-title">Colorful Widget</span>
                     </div>
                 </main>
 
                 <!-- ============== Dock栏 ============= -->
-                <div class="dock">
+                <nav class="dock">
                     <div class="dock-icon" id="dock-icon-1" data-storage-key="dockIcon1"></div>
                     <div class="dock-icon" id="dock-icon-2" data-storage-key="dockIcon2"></div>
                     <div class="dock-icon" id="dock-icon-3" data-storage-key="dockIcon3"></div>
                     <div class="dock-icon" id="dock-icon-4" data-storage-key="dockIcon4"></div>
-                </div>
+                </nav>
                 
                 <!-- =============================================== -->
                 <!-- ============== 应用屏幕区域 (所有App页面) ======== -->
                 <!-- =============================================== -->
 
                 <!-- 个性化设置 App -->
-                <div class="app-screen" id="screen-personalization">
+                <section class="app-screen" id="screen-personalization">
                     <div class="app-header">
-                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>美化设置</h1><div class="header-placeholder"></div>
+                        <button class="back-btn" aria-label="返回"><i class="fas fa-chevron-left"></i></button><h1>美化设置</h1><div class="header-placeholder"></div>
                     </div>
                     <div class="app-content">
                         <ul class="menu-list">
@@ -116,29 +116,29 @@
                             <li id="menu-font-settings">修改字体</li>
                         </ul>
                     </div>
-                </div>
+                </section>
 
                 <!-- 更换图标页 -->
-                <div class="app-screen" id="screen-icon-changer">
+                <section class="app-screen" id="screen-icon-changer">
                     <div class="app-header">
-                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>更换App图标</h1><div class="header-placeholder"></div>
+                        <button class="back-btn" aria-label="返回"><i class="fas fa-chevron-left"></i></button><h1>更换App图标</h1><div class="header-placeholder"></div>
                     </div>
                     <div class="app-content icon-grid-container"><div class="icon-grid"></div></div>
-                </div>
+                </section>
 
                 <!-- 播放列表页 -->
-                <div class="app-screen" id="screen-playlist">
+                <section class="app-screen" id="screen-playlist">
                     <div class="app-header">
-                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>播放列表</h1>
-                        <div class="header-placeholder"><button id="add-song-btn" class="add-song-btn"><i class="fas fa-plus"></i></button></div>
+                        <button class="back-btn" aria-label="返回"><i class="fas fa-chevron-left"></i></button><h1>播放列表</h1>
+                        <div class="header-placeholder"><button id="add-song-btn" class="add-song-btn" aria-label="添加歌曲"><i class="fas fa-plus"></i></button></div>
                     </div>
                     <div class="app-content"><ul id="playlist-container" class="playlist-container"></ul></div>
-                </div>
+                </section>
                 
                 <!-- API设置页 -->
-                <div class="app-screen" id="screen-api-settings">
+                <section class="app-screen" id="screen-api-settings">
                     <div class="app-header">
-                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>API接口设置</h1><div class="header-placeholder"></div>
+                        <button class="back-btn" aria-label="返回"><i class="fas fa-chevron-left"></i></button><h1>API接口设置</h1><div class="header-placeholder"></div>
                     </div>
                     <div class="app-content">
                         <h2 class="section-title">已存配置</h2>
@@ -152,12 +152,12 @@
                             <p id="api-status-msg" class="status-msg"></p><button id="save-api-btn" class="form-btn-full" disabled>保存配置</button>
                         </div>
                     </div>
-                </div>
+                </section>
 
                 <!-- 字体设置页 -->
-                <div class="app-screen" id="screen-font-settings">
+                <section class="app-screen" id="screen-font-settings">
                     <div class="app-header">
-                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>修改字体</h1><div class="header-placeholder"></div>
+                        <button class="back-btn" aria-label="返回"><i class="fas fa-chevron-left"></i></button><h1>修改字体</h1><div class="header-placeholder"></div>
                     </div>
                     <div class="app-content">
                         <h2 class="section-title">在线字体</h2>
@@ -168,22 +168,22 @@
                             <p class="status-msg">当前字号: <span id="font-size-value">16px</span></p>
                         </div>
                     </div>
-                </div>
+                </section>
 
                 <!-- 角色书 App -->
-                <div class="app-screen" id="screen-character-book">
+                <section class="app-screen" id="screen-character-book">
                     <div class="app-header">
-                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button><h1>角色书</h1>
-                        <div class="header-placeholder"><button id="add-char-btn" class="add-song-btn"><i class="fas fa-plus"></i></button></div>
+                        <button class="back-btn" aria-label="返回"><i class="fas fa-chevron-left"></i></button><h1>角色书</h1>
+                        <div class="header-placeholder"><button id="add-char-btn" class="add-song-btn" aria-label="添加角色"><i class="fas fa-plus"></i></button></div>
                     </div>
                     <div class="app-content" id="character-list-container">
                     </div>
-                </div>
+                </section>
 
                 <!-- 角色编辑器 -->
-                <div class="app-screen" id="screen-character-editor">
+                <section class="app-screen" id="screen-character-editor">
                     <div class="app-header">
-                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button>
+                        <button class="back-btn" aria-label="返回"><i class="fas fa-chevron-left"></i></button>
                         <h1 id="editor-title">创建角色</h1>
                         <div class="header-placeholder"><button id="save-char-btn" class="header-btn-save">保存</button></div>
                     </div>
@@ -206,28 +206,28 @@
                         </div>
                         <button id="delete-char-btn" class="btn-delete">删除角色</button>
                     </div>
-                </div>
+                </section>
 
                 <!-- (新添加) 聊天应用 - 列表页 -->
-                <div class="app-screen" id="screen-chat-list">
+                <section class="app-screen" id="screen-chat-list">
                     <div class="app-header">
-                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button>
+                        <button class="back-btn" aria-label="返回"><i class="fas fa-chevron-left"></i></button>
                         <h1>聊天</h1>
-                        <div class="header-placeholder"><button id="add-chat-btn" class="add-song-btn"><i class="fas fa-plus"></i></button></div>
+                        <div class="header-placeholder"><button id="add-chat-btn" class="add-song-btn" aria-label="添加新聊天"><i class="fas fa-plus"></i></button></div>
                     </div>
                     <div class="app-content" id="chat-list-container">
                         <!-- JS将在这里动态生成聊天卡片 -->
                     </div>
-                </div>
+                </section>
 
                                 <!-- =============================================== -->
                 <!-- ============= 聊天应用 - 对话页 (V2) ========== -->
                 <!-- =============================================== -->
-                <div class="app-screen" id="screen-chat-dialogue">
+                <section class="app-screen" id="screen-chat-dialogue">
                     <div class="app-header transparent"> <!-- 新增 transparent 类 -->
-                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button>
+                        <button class="back-btn" aria-label="返回"><i class="fas fa-chevron-left"></i></button>
                         <h1 id="chat-header-title">角色名</h1>
-                        <div class="header-placeholder"><button id="chat-more-btn" class="add-song-btn"><i class="fas fa-ellipsis-h"></i></button></div>
+                        <div class="header-placeholder"><button id="chat-more-btn" class="add-song-btn" aria-label="更多聊天选项"><i class="fas fa-ellipsis-h"></i></button></div>
                     </div>
 
                     <!-- 消息显示区域 -->
@@ -249,21 +249,21 @@
 
                     <!-- 输入区域 -->
                     <div class="chat-input-area">
-                        <button id="chat-expand-btn" class="input-action-btn"><i class="fas fa-plus"></i></button>
+                        <button id="chat-expand-btn" class="input-action-btn" aria-label="展开功能面板"><i class="fas fa-plus"></i></button>
                         <textarea id="chat-text-input" placeholder="输入信息..." rows="1"></textarea>
                         <div class="send-btn-group">
-                            <button id="send-buffer-btn" class="input-action-btn"><i class="fas fa-feather-alt"></i></button>
-                            <button id="send-final-btn" class="input-action-btn send"><i class="fas fa-envelope"></i></button>
+                            <button id="send-buffer-btn" class="input-action-btn" aria-label="发送此条消息"><i class="fas fa-feather-alt"></i></button>
+                            <button id="send-final-btn" class="input-action-btn send" aria-label="发送并等待AI回复"><i class="fas fa-envelope"></i></button>
                         </div>
                     </div>
-                </div>
+                </section>
 
                                 <!-- =============================================== -->
                 <!-- =========== 聊天详情页 (V2 - 完整版) ========== -->
                 <!-- =============================================== -->
-                <div class="app-screen" id="screen-chat-details">
+                <section class="app-screen" id="screen-chat-details">
                     <div class="app-header">
-                        <button class="back-btn"><i class="fas fa-chevron-left"></i></button>
+                        <button class="back-btn" aria-label="返回"><i class="fas fa-chevron-left"></i></button>
                         <h1>聊天详情</h1>
                         <div class="header-placeholder"></div>
                     </div>
@@ -302,24 +302,20 @@
                                     <input type="range" id="memory-turns-slider" min="0" max="500" step="2" value="12">
                                 </div>
                             </li>
-<!-- ▼▼▼ 在这里添加 ▼▼▼ -->
-        <li id="set-chat-wallpaper-btn" style="cursor: pointer;">
-            <span>设置聊天壁纸</span>
-            <i class="fas fa-chevron-right" style="opacity: 0.5;"></i>
-        </li>
-        <!-- ▲▲▲ 添加结束 ▲▲▲ -->
+                            <li id="set-chat-wallpaper-btn" style="cursor: pointer;">
+                                <span>设置聊天壁纸</span>
+                                <i class="fas fa-chevron-right" style="opacity: 0.5;"></i>
+                            </li>
                         </ul>
                         
                         <div class="danger-zone">
-<!-- ▼▼▼ 在这里添加 ▼▼▼ -->
-        <button id="clear-wallpaper-btn" class="btn-delete full-width">清除当前壁纸</button>
-        <!-- ▲▲▲ 添加结束 ▲▲▲ -->
+                            <button id="clear-wallpaper-btn" class="btn-delete full-width">清除当前壁纸</button>
                             <button id="clear-history-btn" class="btn-delete full-width">清空聊天记录</button>
                             <button id="block-char-btn" class="btn-delete full-width">拉黑好友</button>
                             <button id="delete-chat-btn" class="btn-delete full-width">删除此对话</button>
                         </div>
                     </div>
-                </div>
+                </section>
     <!-- =============================================== -->
     <!-- ================= 弹窗区域 ================== -->
     <!-- =============================================== -->

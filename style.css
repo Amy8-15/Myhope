@@ -24,17 +24,21 @@ body[data-theme="dark"] {
 /* =============================================== */
 /* ============== 基础与布局样式 =============== */
 /* =============================================== */
-:root { font-size: 16px; }
+:root {
+    font-size: 16px;
+    --status-bar-height: 3rem; /* 新增：定义状态栏高度变量 */
+    --app-header-padding-top: 1rem; /* 新增：定义应用头部的基础内边距 */
+}
 body {
     display: flex; 
     justify-content: center; 
-    align-items: flex-start;  /* 改这里：原来是 center */
+    align-items: flex-start;
     min-height: 100vh;
     background-color: var(--body-bg-color);
     font-family: 'SF Pro Text', 'Noto Sans SC', sans-serif; 
     -webkit-font-smoothing: antialiased;
     margin: 0; 
-    padding: 0.5rem;  /* 改这里：原来是 1rem */
+    padding: 0.5rem;
     box-sizing: border-box; 
     transition: background-color 0.3s ease;
 }
@@ -52,7 +56,9 @@ body {
     transition: background-color 0.3s ease;
 }
 .status-bar {
-    padding: 1.25rem 2.2rem 0.3rem; height: 3rem; box-sizing: border-box;
+    padding: 1.25rem 2.2rem 0.3rem;
+    height: var(--status-bar-height); /* 使用变量 */
+    box-sizing: border-box;
     font-size: 1rem; font-weight: 600; flex-shrink: 0;
     display: flex; justify-content: space-between; align-items: center;
     color: var(--text-color); z-index: 110; position: relative;
@@ -62,7 +68,8 @@ body {
 .status-bar > span:first-child {
     flex-grow: 1;
 }
-/* --- 修正后的全局规则 --- */
+
+/* 当任何App打开时，状态栏的默认样式 */
 .mobile-frame.app-open .status-bar {
     background-color: var(--app-screen-bg);
     color: var(--app-screen-text);
@@ -90,7 +97,7 @@ body {
 /* =============================================== */
 .music-widget {
     grid-column: 1 / 5;
-    grid-row: 1 / 3; /* 关键：确保播放器只占据顶部 2 行网格空间 */
+    grid-row: 1 / 3; 
     background-color: var(--widget-glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -100,13 +107,13 @@ body {
     align-items: center;
     gap: 1rem;
     color: var(--widget-glass-text);
-    overflow: hidden; /* 防止内部元素意外溢出 */
+    overflow: hidden;
 }
 
 .music-widget .album-art {
     height: 100%;
-    flex-shrink: 0; /* 关键：防止专辑图在空间不足时被压缩 */
-    aspect-ratio: 1 / 1; /* 关键：确保自身是完美的正方形 */
+    flex-shrink: 0;
+    aspect-ratio: 1 / 1;
     border-radius: 0.75rem;
     background-size: cover;
     background-position: center;
@@ -115,12 +122,12 @@ body {
 }
 
 .music-widget .song-info {
-    flex-grow: 1; /* 关键：占据所有剩余的横向空间 */
+    flex-grow: 1;
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* 关键：将标题、进度条、按钮三部分在垂直方向上均匀分布 */
-    min-width: 0; /* 关键：允许此容器收缩，并让内部的文字正确截断，防止布局崩溃 */
+    justify-content: space-between;
+    min-width: 0;
 }
 
 .top-info {
@@ -136,7 +143,7 @@ body {
     line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* 标题过长时显示省略号 */
+    text-overflow: ellipsis; 
     flex-grow: 1;
     min-width: 0;
 }
@@ -249,7 +256,7 @@ body {
     display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s ease-in-out; z-index: 100;
 }
 .app-screen.active { transform: translateX(0); }
-.app-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--app-header-border); flex-shrink: 0; }
+.app-header { display: flex; align-items: center; justify-content: space-between; padding: var(--app-header-padding-top) 1.25rem; border-bottom: 1px solid var(--app-header-border); flex-shrink: 0; }
 .back-btn, .header-placeholder { width: 2rem; }
 .back-btn { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--app-screen-text); }
 .app-header h1 { font-size: 1.125rem; margin: 0; text-align: center; font-weight: 600; }
@@ -601,8 +608,8 @@ body[data-theme="dark"] .api-item.active::after {
     box-sizing: border-box;
     margin-bottom: 1rem;
     cursor: default;
-    position: relative; /* 为加载动画定位 */
-    overflow: hidden; /* 防止加载动画溢出圆角 */
+    position: relative; 
+    overflow: hidden; 
 }
 .ticket-art {
     background-color: var(--app-screen-bg);
@@ -831,12 +838,12 @@ body[data-theme="dark"] .ticket .loading-overlay {
 
 .chat-list-card {
     background-color: var(--menu-item-bg);
-    padding: 0.8rem 1.25rem; /* 左右内边距与app-content一致 */
+    padding: 0.8rem 1.25rem; 
     display: flex;
     align-items: center;
     cursor: pointer;
     transition: background-color 0.2s;
-    border-bottom: 1px solid var(--app-header-border); /* 用分割线代替外边距 */
+    border-bottom: 1px solid var(--app-header-border);
 }
 
 .chat-list-card:first-child {
@@ -882,26 +889,26 @@ body[data-theme="dark"] .ticket .loading-overlay {
 
 /* --- 1. 默认状态 (无壁纸) --- */
 #screen-chat-dialogue {
-    background-color: var(--app-screen-bg); /* 恢复默认背景色 */
+    background-color: var(--app-screen-bg);
 }
 .chat-messages-container {
     padding: 1rem;
-    padding-bottom: 90px; /* 为输入框留出足够空间 */
-    display: flex; /* <--- 添加这一行 */
-    flex-direction: column; /* <--- 添加这一行 */
+    padding-bottom: 90px;
+    display: flex; 
+    flex-direction: column;
 }
 .chat-input-area {
     position: absolute; bottom: 0; left: 0; right: 0;
     padding: 0.5rem 1rem 1.5rem;
     display: flex; align-items: flex-end; gap: 0.5rem;
-    background-color: var(--menu-item-bg); /* 恢复默认的输入区背景 */
-    border-top: 1px solid var(--app-header-border); /* 加上顶部分割线 */
+    background-color: var(--menu-item-bg); 
+    border-top: 1px solid var(--app-header-border);
 }
 #chat-text-input {
     flex-grow: 1; background-color: var(--app-screen-bg);
     border-radius: 1rem; border: 1px solid var(--app-header-border); 
     padding: 0.6rem 1rem;
-    color: var(--app-screen-text); /* 恢复默认文字颜色 */
+    color: var(--app-screen-text);
     font-size: 1rem; resize: none; max-height: 100px;
 }
 #chat-text-input::placeholder { color: var(--app-screen-text); opacity: 0.4; }
@@ -926,14 +933,13 @@ body[data-theme="dark"] .ticket .loading-overlay {
 .chat-function-panel.visible { max-height: 200px; }
 .chat-function-panel .panel-content { padding: 1rem; color: var(--app-screen-text); }
 /* --- 2. 壁纸激活状态 (最终沉浸式效果) --- */
-/* --- 新增：让顶部的状态栏也透明 --- */
 #screen-chat-dialogue.has-wallpaper .app-header {
-    background-color: transparent; /* 改为完全透明 */
-    backdrop-filter: none;          /* 移除毛玻璃效果 */
-    -webkit-backdrop-filter: none;  /* 移除毛玻璃效果 */
+    background-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border-bottom: none; 
     color: white; 
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5); /* 保留文字阴影以确保可读性 */
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 #screen-chat-dialogue.has-wallpaper .app-header .back-btn,
@@ -942,9 +948,9 @@ body[data-theme="dark"] .ticket .loading-overlay {
 }
 
 #screen-chat-dialogue.has-wallpaper .chat-input-area {
-    background-color: transparent; /* 改为完全透明 */
-    backdrop-filter: none;          /* 移除毛玻璃效果 */
-    -webkit-backdrop-filter: none;  /* 移除毛玻璃效果 */
+    background-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border-top: none;
 }
 
@@ -963,34 +969,23 @@ body[data-theme="dark"] .ticket .loading-overlay {
     line-height: 1.5;
     word-wrap: break-word;
     white-space: pre-wrap;
-    border-radius: 16px; /* 统一的圆角 */
-    
-    /* 关键：定义边框来确保气泡轮廓在任何背景下都可见 */
+    border-radius: 16px; 
     border: 1px solid rgba(255, 255, 255, 0.25);
-    
-    /* 关键：毛玻璃/背景模糊效果 */
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
-    
-    /* 可选：为气泡添加一点阴影，增强立体感和与背景的分离度 */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* --- 角色/好友的气泡 (收到的消息) --- */
-/* 使用“白色玻璃”效果，在任何背景下都表现良好 */
 .chat-message.character .message-bubble {
-    background-color: rgba(255, 255, 255, 0.35); /* 半透明白色 */
-    color: #000000; /* 黑色文字，在半透明白色上最清晰 */
+    background-color: rgba(255, 255, 255, 0.35);
+    color: #000000;
 }
 
-/* --- 用户/我的气泡 (发送的消息) --- */
-/* 使用“深色玻璃”效果，与白色玻璃形成对比 */
 .chat-message.user .message-bubble {
-    background-color: rgba(50, 50, 50, 0.4); /* 半透明深灰色 */
-    color: #FFFFFF; /* 白色文字，在半透明深色上最清晰 */
+    background-color: rgba(50, 50, 50, 0.4);
+    color: #FFFFFF;
 }
 
-/* --- 系统消息的气泡 (保持不变) --- */
 .chat-message.system .message-bubble {
     background-color: rgba(128, 128, 128, 0.2);
     color: var(--app-screen-text);
@@ -998,9 +993,9 @@ body[data-theme="dark"] .ticket .loading-overlay {
     font-size: 0.8rem;
     text-align: center;
     border-radius: 20px;
-    border: none; /* 系统消息通常不需要边框和阴影 */
+    border: none;
     box-shadow: none;
-    backdrop-filter: none; /* 系统消息不需要毛玻璃效果 */
+    backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 /* --- 聊天消息与头像布局 (V2 - 修正版) --- */
@@ -1011,16 +1006,13 @@ body[data-theme="dark"] .ticket .loading-overlay {
     max-width: 85%;
 }
 
-/* 关键：用 margin 来控制左右对齐，这是最可靠的方法 */
 .chat-message.user {
     margin-left: auto;
     flex-direction: row-reverse;
 }
 .chat-message.character {
     margin-right: auto;
-} /* <--- 修正点：这里必须有一个结束的 "}" */
-
-/* (新增) 让系统消息真正居中 */
+} 
 .chat-message.system {
     margin-left: auto;
     margin-right: auto;
@@ -1060,12 +1052,8 @@ body[data-theme="dark"] .ticket .loading-overlay {
     border-radius: 50%;
     object-fit: cover;
 }
-/* --- (新增) 智能隐藏连续消息的头像 --- */
-/* 规则：当一个用户消息紧跟着另一个用户消息时... */
 .chat-message.user + .chat-message.user .avatar,
-/* 或者，当一个角色消息紧跟着另一个角色消息时... */
 .chat-message.character + .chat-message.character .avatar {
-    /* ...就把后面这个消息的头像隐藏掉 */
     visibility: hidden;
 }
 
@@ -1124,8 +1112,8 @@ body[data-theme="dark"] .ticket .loading-overlay {
     content: '';
     position: absolute;
     left: 2px;
-    top: 50%; /* 改为50%垂直居中 */
-    transform: translateY(-50%); /* 使用transform精确居中 */
+    top: 50%; 
+    transform: translateY(-50%);
     width: 27px;
     height: 27px;
     background-color: white;
@@ -1137,7 +1125,7 @@ body[data-theme="dark"] .ticket .loading-overlay {
     background-color: #34c759;
 }
 .ios-switch:checked + label::before {
-    transform: translateX(20px) translateY(-50%); /* 保持垂直居中 */
+    transform: translateX(20px) translateY(-50%);
 }
 
 body[data-theme="dark"] .ios-switch + label {
@@ -1178,8 +1166,8 @@ body[data-theme="dark"] .ios-switch:checked + label {
 .slider-setting-item {
     display: flex;
     flex-direction: column;
-    align-items: stretch; /* 让子元素宽度撑满 */
-    padding: 0.8rem 1rem; /* 调整内边距 */
+    align-items: stretch;
+    padding: 0.8rem 1rem;
     cursor: default;
 }
 
@@ -1215,7 +1203,7 @@ body[data-theme="dark"] .ios-switch:checked + label {
 .slider-setting-item input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 24px; /* 增大触控点 */
+    width: 24px; 
     height: 24px;
     background: #ffffff;
     cursor: pointer;
@@ -1247,10 +1235,10 @@ body[data-theme="dark"] .slider-setting-item input[type="range"]::-moz-range-thu
 /* =============================================== */
 .notification-banner {
     position: absolute;
-    top: 10px; /* 距离手机顶部边缘的距离 */
+    top: 10px;
     left: 5%;
     right: 5%;
-    z-index: 999; /* 确保它在最顶层 */
+    z-index: 999;
     background-color: var(--widget-glass-bg);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
@@ -1260,15 +1248,12 @@ body[data-theme="dark"] .slider-setting-item input[type="range"]::-moz-range-thu
     align-items: center;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     cursor: pointer;
-
-    /* 默认状态：隐藏在屏幕上方 */
     opacity: 0;
     transform: translateY(-150%);
     transition: transform 0.4s ease-out, opacity 0.4s ease-out;
 }
 
 .notification-banner.visible {
-    /* 可见状态：滑入屏幕 */
     opacity: 1;
     transform: translateY(0);
 }
@@ -1308,32 +1293,28 @@ body[data-theme="dark"] .slider-setting-item input[type="range"]::-moz-range-thu
 /* ============= 最终版：沉浸式聊天壁纸修复 ============= */
 /* =============================================== */
 
-/* 规则1：当沉浸模式激活时，让状态栏背景透明，文字变白加阴影 */
-.mobile-frame.immersive-chat-active .status-bar {
-    background-color: transparent !important;
-    color: white !important;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+/* 规则1：优化！使用更高特指度的选择器，移除 !important */
+/* 当App打开且沉浸模式激活时，强制状态栏透明 */
+.mobile-frame.app-open.immersive-chat-active .status-bar {
+    background-color: transparent;
+    color: white;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
-/* 同时确保状态栏里的按钮也适配白色主题 */
-.mobile-frame.immersive-chat-active .status-bar .theme-btn {
-    color: white !important;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+.mobile-frame.app-open.immersive-chat-active .status-bar .theme-btn {
+    color: white;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
-
-/* 规则2：这是核心！将整个聊天屏幕向上平移，使其“顶”到手机顶部 */
+/* 规则2：优化！使用CSS变量进行布局计算 */
+/* 将聊天屏幕向上平移状态栏的高度，并增加自身高度以填补空缺 */
 .mobile-frame.immersive-chat-active #screen-chat-dialogue {
-    /* 使用 transform 向上移动 3rem (即状态栏的高度) */
-    transform: translateY(-3rem);
-    /* 同时增加自身高度，填补下方的空缺，防止底部出现白边 */
-    height: calc(100% + 3rem);
+    transform: translateY(calc(-1 * var(--status-bar-height)));
+    height: calc(100% + var(--status-bar-height));
 }
 
-
-/* 规则3：最后，为聊天页的顶部标题栏增加内边距，把它“推”下来， */
-/* 防止返回按钮和角色名被状态栏的“时间/信号”文字遮挡 */
+/* 规则3：优化！使用CSS变量进行布局计算 */
+/* 增加聊天页头部的内边距，防止内容被状态栏文字遮挡 */
 .mobile-frame.immersive-chat-active #screen-chat-dialogue .app-header {
-    /* 增加的内边距 = 状态栏高度(3rem) + 原有内边距(1rem) */
-    padding-top: 4rem;
+    padding-top: calc(var(--status-bar-height) + var(--app-header-padding-top));
 }
