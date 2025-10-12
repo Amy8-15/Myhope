@@ -1312,9 +1312,85 @@ body[data-theme="dark"] .slider-setting-item input[type="range"]::-moz-range-thu
     transform: translateY(calc(-1 * var(--status-bar-height)));
     height: calc(100% + var(--status-bar-height));
 }
-
 /* 规则3：优化！使用CSS变量进行布局计算 */
 /* 增加聊天页头部的内边距，防止内容被状态栏文字遮挡 */
 .mobile-frame.immersive-chat-active #screen-chat-dialogue .app-header {
     padding-top: calc(var(--status-bar-height) + var(--app-header-padding-top));
+}
+
+/* =============================================== */
+/* ============= AI预设管理器样式 (新增) ============ */
+/* =============================================== */
+
+.preset-selector-area {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+}
+
+.preset-selector-area #preset-selector {
+    flex-grow: 1;
+    margin-bottom: 0;
+}
+
+.preset-selector-area #manage-presets-btn {
+    flex-shrink: 0;
+    padding: 0.8rem;
+    line-height: 1;
+}
+
+#prompt-modules-list .menu-list-item,
+#prompt-modules-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: default;
+}
+
+#prompt-modules-list li:hover {
+    background-color: var(--menu-item-bg);
+}
+
+.module-info {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.module-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.module-meta {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    margin-top: 0.25rem;
+}
+
+.module-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.module-actions .module-edit-btn {
+    background: none;
+    border: none;
+    color: var(--app-screen-text);
+    opacity: 0.5;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+#prompt-editor-modal .form-textarea {
+    min-height: 200px;
+    margin: 0.75rem 0;
+}
+
+#prompt-editor-modal .form-row {
+    margin-bottom: 0.75rem;
 }

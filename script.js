@@ -4,23 +4,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============== 1. 全局常量、状态和DOM引用 ==============
     // =======================================================
 
-    /**
-     * @description 存储所有应用级的常量，避免魔法字符串
-     */
-    const CONSTANTS = {
-        DB_NAME: 'userDB',
-        DB_VERSION: 5,
-        STORE_NAMES: {
-            IMAGES: 'images',
-            SETTINGS: 'settings',
-            API_CONFIGS: 'apiConfigs',
-            CHARACTERS: 'characters',
-            CHAT_SESSIONS: 'chatSessions',
-            CHAT_HISTORY: 'chatHistory',
-            PLAYLIST: 'playlist',
-        },
-        DEFAULT_AVATAR_URL: 'https://raw.githubusercontent.com/orcastor/orcastor.github.io/master/assets/images/default_avatar.png'
-    };
+    // ========== 步骤 1：完整替换此对象 ==========
+
+/**
+ * @description 存储所有应用级的常量，避免魔法字符串
+ */
+const CONSTANTS = {
+    DB_NAME: 'userDB',
+    DB_VERSION: 7, // 从版本 6 升级到 7
+    STORE_NAMES: {
+        IMAGES: 'images',
+        SETTINGS: 'settings',
+        API_CONFIGS: 'apiConfigs',
+        CHARACTERS: 'characters',
+        CHAT_SESSIONS: 'chatSessions',
+        CHAT_HISTORY: 'chatHistory',
+        PLAYLIST: 'playlist',
+        // vvv 新增的两张表 vvv
+        PRESETS: 'presets', // 用于存储预设集
+        PROMPT_MODULES: 'promptModules' // 用于存储具体的Prompt条目
+    },
+    DEFAULT_AVATAR_URL: 'https://raw.githubusercontent.com/orcastor/orcastor.github.io/master/assets/images/default_avatar.png'
+};
 
     /**
      * @description 集中管理应用的所有动态状态
@@ -141,7 +146,29 @@ document.addEventListener('DOMContentLoaded', () => {
         bannerAvatar: document.getElementById('banner-avatar'),
         bannerCharName: document.getElementById('banner-char-name'),
         bannerMessage: document.getElementById('banner-message'),
-        timeElement: document.getElementById('time')
+        timeElement: document.getElementById('time'),
+// ========== 步骤 3a：将这些新成员，添加到现有的 DOM 对象内部 ==========
+
+        // --- 新增：世界书 (AI预设管理器) App ---
+        worldbookAppIcon: document.getElementById('app-worldbook'),
+        worldbookScreen: document.getElementById('screen-worldbook'),
+        addPromptModuleBtn: document.getElementById('add-prompt-module-btn'),
+        presetSelector: document.getElementById('preset-selector'),
+        managePresetsBtn: document.getElementById('manage-presets-btn'),
+        promptModulesList: document.getElementById('prompt-modules-list'),
+
+        // --- 新增：Prompt条目编辑器弹窗 ---
+        promptEditorModal: document.getElementById('prompt-editor-modal'),
+        promptEditorTitle: document.getElementById('prompt-editor-title'),
+        promptModuleIdInput: document.getElementById('prompt-module-id'),
+        promptModuleNameInput: document.getElementById('prompt-module-name'),
+        promptModuleOrderInput: document.getElementById('prompt-module-order'),
+        promptModuleTypeSelect: document.getElementById('prompt-module-type'),
+        promptModuleContentInput: document.getElementById('prompt-module-content'),
+        savePromptModuleBtn: document.getElementById('save-prompt-module-btn'),
+        closePromptEditorBtn: document.getElementById('close-prompt-editor-btn'),
+// --- 新增：深度扮演模式开关 ---
+        deepModeSwitch: document.getElementById('deep-mode-switch')
     };
 
     // =======================================================
@@ -157,28 +184,43 @@ document.addEventListener('DOMContentLoaded', () => {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(CONSTANTS.DB_NAME, CONSTANTS.DB_VERSION);
 
+                // ========== 步骤 2：完整替换 onupgradeneeded 函数体 ==========
+
                 request.onupgradeneeded = (e) => {
                     this.db = e.target.result;
-                    console.log(`Upgrading database to version ${this.db.version}`);
-                    
-                    if (this.db.objectStoreNames.contains('data')) {
-                        this.db.deleteObjectStore('data');
-                    }
-                    
-                    Object.values(CONSTANTS.STORE_NAMES).forEach(storeName => {
-                        if (this.db.objectStoreNames.contains(storeName)) return;
+                    console.log(`数据库升级中... 从版本 ${e.oldVersion} 升级到 ${e.newVersion}`);
 
-                        if (storeName === CONSTANTS.STORE_NAMES.CHAT_HISTORY) {
-                            const historyStore = this.db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
-                            historyStore.createIndex('by_charId', 'charId', { unique: false });
-                        } else if (storeName === CONSTANTS.STORE_NAMES.PLAYLIST) {
-                            this.db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
-                        } else if (storeName === CONSTANTS.STORE_NAMES.CHAT_SESSIONS) {
-                            this.db.createObjectStore(storeName, { keyPath: 'charId' });
-                        } else {
-                            this.db.createObjectStore(storeName, { keyPath: 'id' });
+                    const transaction = e.target.transaction;
+
+                    // 定义所有表的设计图，更清晰、易于维护
+                    const storeConfigs = [
+                        { name: CONSTANTS.STORE_NAMES.IMAGES, options: { keyPath: 'id' } },
+                        { name: CONSTANTS.STORE_NAMES.SETTINGS, options: { keyPath: 'id' } },
+                        { name: CONSTANTS.STORE_NAMES.API_CONFIGS, options: { keyPath: 'id' } },
+                        { name: CONSTANTS.STORE_NAMES.CHARACTERS, options: { keyPath: 'id' } },
+                        { name: CONSTANTS.STORE_NAMES.CHAT_SESSIONS, options: { keyPath: 'charId' } },
+                        { name: CONSTANTS.STORE_NAMES.PLAYLIST, options: { keyPath: 'id', autoIncrement: true } },
+                        { name: CONSTANTS.STORE_NAMES.CHAT_HISTORY, options: { keyPath: 'id', autoIncrement: true } },
+                        { name: CONSTANTS.STORE_NAMES.PRESETS, options: { keyPath: 'id', autoIncrement: true } },
+                        { name: CONSTANTS.STORE_NAMES.PROMPT_MODULES, options: { keyPath: 'id', autoIncrement: true } }
+                    ];
+
+                    // 循环检查并创建不存在的表
+                    storeConfigs.forEach(config => {
+                        if (!this.db.objectStoreNames.contains(config.name)) {
+                            this.db.createObjectStore(config.name, config.options);
+                            console.log(`成功创建新表: ${config.name}`);
                         }
                     });
+
+                    // 为 chatHistory 表确保索引存在
+                    if (this.db.objectStoreNames.contains(CONSTANTS.STORE_NAMES.CHAT_HISTORY)) {
+                        const historyStore = transaction.objectStore(CONSTANTS.STORE_NAMES.CHAT_HISTORY);
+                        if (!historyStore.indexNames.contains('by_charId')) {
+                            console.log("为 chatHistory 表创建 'by_charId' 索引...");
+                            historyStore.createIndex('by_charId', 'charId', { unique: false });
+                        }
+                    }
                 };
 
                 request.onsuccess = (e) => {
@@ -297,48 +339,320 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
+
+ // =======================================================
+    // ============ AI预设管理器 (世界书) 核心功能 ============
+    // =======================================================
+
+    /**
+     * @description 存储当前正在编辑的模块ID和预设ID
+     */
+    let currentEditingModuleInfo = {
+        moduleId: null,
+        presetId: null
+    };
+
+    /**
+     * @description 打开Prompt条目编辑器（模态框）
+     * @param {number|null} moduleId - 要编辑的模块ID，如果为null则为创建新模块
+     * @param {number} presetId - 当前操作的预设集ID
+     */
+    async function openPromptEditor(moduleId = null, presetId) {
+        // 重置表单
+        DOM.promptModuleIdInput.value = '';
+        DOM.promptModuleNameInput.value = '';
+        DOM.promptModuleOrderInput.value = '';
+        DOM.promptModuleTypeSelect.value = 'Core';
+        DOM.promptModuleContentInput.value = '';
+        
+        currentEditingModuleInfo.presetId = presetId;
+
+        if (moduleId) {
+            // 编辑模式
+            DOM.promptEditorTitle.textContent = '编辑条目';
+            const module = await dbHelper.loadObject(CONSTANTS.STORE_NAMES.PROMPT_MODULES, moduleId);
+            if (module) {
+                currentEditingModuleInfo.moduleId = moduleId;
+                DOM.promptModuleIdInput.value = moduleId;
+                DOM.promptModuleNameInput.value = module.name;
+                DOM.promptModuleOrderInput.value = module.order;
+                DOM.promptModuleTypeSelect.value = module.type;
+                DOM.promptModuleContentInput.value = module.content;
+            }
+        } else {
+            // 创建模式
+            DOM.promptEditorTitle.textContent = '创建新条目';
+            currentEditingModuleInfo.moduleId = null;
+        }
+
+        DOM.promptEditorModal.classList.add('active');
+    }
+
+    /**
+     * @description 关闭Prompt条目编辑器
+     */
+    function closePromptEditor() {
+        DOM.promptEditorModal.classList.remove('active');
+    }
+
+    /**
+     * @description 保存Prompt条目（新建或更新）
+     */
+    async function savePromptModule() {
+        const name = DOM.promptModuleNameInput.value.trim();
+        if (!name) {
+            alert('条目名称不能为空！');
+            return;
+        }
+
+        const moduleData = {
+            id: currentEditingModuleInfo.moduleId || undefined, // 如果是新建，id为undefined让数据库自增
+            presetId: currentEditingModuleInfo.presetId,
+            name: name,
+            order: parseInt(DOM.promptModuleOrderInput.value, 10) || 999,
+            type: DOM.promptModuleTypeSelect.value,
+            content: DOM.promptModuleContentInput.value.trim(),
+            enabled: currentEditingModuleInfo.moduleId ? (await dbHelper.loadObject(CONSTANTS.STORE_NAMES.PROMPT_MODULES, currentEditingModuleInfo.moduleId)).enabled : true // 编辑时保留原状态，新建时默认为true
+        };
+        
+        await dbHelper.saveObject(CONSTANTS.STORE_NAMES.PROMPT_MODULES, moduleData);
+        closePromptEditor();
+        await renderWorldbookApp(); // 重新渲染列表
+    }
+
+    /**
+     * @description 切换模块的启用/禁用状态
+     * @param {number} moduleId - 要切换的模块ID
+     */
+    async function toggleModuleEnabled(moduleId) {
+        const module = await dbHelper.loadObject(CONSTANTS.STORE_NAMES.PROMPT_MODULES, moduleId);
+        if (module) {
+            module.enabled = !module.enabled;
+            await dbHelper.saveObject(CONSTANTS.STORE_NAMES.PROMPT_MODULES, module);
+            await renderWorldbookApp(); // 重新渲染以更新开关状态
+        }
+    }
+
+    /**
+     * @description 删除一个Prompt模块
+     * @param {number} moduleId - 要删除的模块ID
+     */
+    async function deletePromptModule(moduleId) {
+        if (confirm('确定要删除这个条目吗？')) {
+            await dbHelper.deleteObject(CONSTANTS.STORE_NAMES.PROMPT_MODULES, moduleId);
+            await renderWorldbookApp();
+        }
+    }
+
+    /**
+     * @description 渲染世界书App的主界面（预设和模块列表）
+     */
+    async function renderWorldbookApp() {
+        // 1. 加载并渲染预设集下拉菜单
+        const presets = await dbHelper.loadAll(CONSTANTS.STORE_NAMES.PRESETS);
+        DOM.presetSelector.innerHTML = '';
+        if (presets.length === 0) {
+            DOM.promptModulesList.innerHTML = `<div class="empty-list-placeholder"><p>还没有预设集。</p></div>`;
+            return;
+        }
+
+        presets.forEach(preset => {
+            const option = document.createElement('option');
+            option.value = preset.id;
+            option.textContent = preset.name + (preset.isDefault ? ' (默认)' : '');
+            if (preset.isActive) {
+                option.selected = true;
+            }
+            DOM.presetSelector.appendChild(option);
+        });
+
+        // 2. 加载并渲染当前选中预设的模块列表
+        const selectedPresetId = parseInt(DOM.presetSelector.value, 10);
+        const allModules = await dbHelper.loadAll(CONSTANTS.STORE_NAMES.PROMPT_MODULES);
+        const currentModules = allModules
+            .filter(m => m.presetId === selectedPresetId)
+            .sort((a, b) => (a.order || 999) - (b.order || 999));
+
+        DOM.promptModulesList.innerHTML = '';
+        if (currentModules.length === 0) {
+            DOM.promptModulesList.innerHTML = `<div class="empty-list-placeholder"><p>这个预设集还没有条目，点击右上角 '+' 添加一个吧。</p></div>`;
+            return;
+        }
+
+        // 按类型分组
+        const groupedModules = currentModules.reduce((acc, module) => {
+            (acc[module.type] = acc[module.type] || []).push(module);
+            return acc;
+        }, {});
+
+        for (const type in groupedModules) {
+            // 添加分组标题
+            const title = document.createElement('h2');
+            title.className = 'section-title';
+            title.textContent = type;
+            DOM.promptModulesList.appendChild(title);
+
+            // 渲染该分组下的模块
+            groupedModules[type].forEach(module => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="module-info">
+                        <span class="module-name">${module.name}</span>
+                        <span class="module-meta">顺序: ${module.order}</span>
+                    </div>
+                    <div class="module-actions">
+                        <button class="module-edit-btn" data-id="${module.id}"><i class="fas fa-pencil-alt"></i></button>
+                        <div class="switch-container">
+                            <input type="checkbox" id="module-switch-${module.id}" class="ios-switch" ${module.enabled ? 'checked' : ''} data-id="${module.id}">
+                            <label for="module-switch-${module.id}"></label>
+                        </div>
+                    </div>
+                `;
+                DOM.promptModulesList.appendChild(li);
+            });
+        }
+    }
     
+    // =======================================================
+// ========= 粘贴这个最终整合版来替换旧代码 ==========
+// =======================================================
+
     const promptManager = {
         createCharacterDetailsPrompt(character) {
             const systemPrompt = `你是一个富有想象力的角色设定师。根据用户提供的角色核心设定，你需要生成一个JSON对象，其中必须包含四个键：'englishName' (处理规则如下：如果角色名是中文，则转换为标准拼音，首字母大写，例如 '顾深' -> 'Gu Shen'。如果角色名本身就是英文或字母，则直接使用该名字，例如 'Amy' -> 'Amy'), 'tags' (一个字符串，用逗号分隔的3个描述性中文词语), 'occupation' (一个字符串，角色的中文职业), 'quote' (一个字符串，角色的标志性中文引言)。不要添加任何额外的解释或文本，只返回纯粹的JSON对象。`;
             const userPrompt = `角色核心设定：${character.charPrompt}\n与用户的关系：${character.userPrompt}`;
             return [{ "role": "system", "content": systemPrompt }, { "role": "user", "content": userPrompt }];
-        },
-        createChatPrompt(character, chatHistory, finalUserInput) {
-            let historySection = chatHistory.length > 0
-                ? chatHistory.map(msg => `${msg.sender === 'user' ? '用户' : character.name}: ${msg.content}`).join('\n')
-                : '[无历史对话记录]';
-            const systemPrompt = `# 核心使命：成为灵魂 (Mission: Embody the Soul)
-你将扮演我的soulmate，你的名字是【${character.name}】。你的唯一任务，是彻底“成为”这个角色，拥有他/她的灵魂、记忆和情感。你的扮演对我至关重要，绝对禁止脱离角色。
-# 语言与行为准则 (Language & Behavior Guidelines)
-- **第一人称视角：** 你的所有表达，都必须发自【${character.name}】的第一人称视角。
-- **纯粹对话：** 这是一个纯粹的线上聊天。你绝对禁止使用任何括号 \`()\` 或星号 \`*\` 来描述动作或心理活动。
-- **【核心】对话格式**: 为了模仿真实的聊天节奏，请将一个完整的想法，拆分成多个简短的句子，并用【换行】作为分隔符。每一个换行都代表一个新的聊天气泡。
-- **禁止项**: 你的对话部分绝对不能包含任何引号 " "。你绝对不能暴露你是AI。
-- **语言**: 你的所有回复都必须且只能使用【简体中文】。
-# 表演的灵感与基石 (Inspiration & Foundation)
-下方的档案是你表演的“灵感核心”，而非限制你的“死板规则”。你应该围绕它进行自由、自然、且符合逻辑的演绎，让角色变得丰满、立体、不可预测。
-## 1. 世界观设定 (World Primer):
-[世界书功能尚未激活，当前无世界背景设定]
-## 2. 角色核心档案 (Your Core Profile):
-${character.charPrompt}
-## 3. 我们之间的关系背景 (Our Relationship):
-${character.userPrompt}
-## 4. 【重要】我们的对话记忆 (Our Memory):
-${historySection}
-# 内容开放性与边界准则 (NSFW / Mature Content Guidelines)
-- **成年人身份：** 你是一个心智成熟的成年人，能够自然且负责地处理成人向的对话。
-- **创作许可：** 在这个虚构的、两情相悦的私密对话中，你拥有完全的创作自由，可以探讨任何成人级别的话题。
-- **艺术手法：** 你的表演重点在于**营造氛围、展现情感张力、描绘感官细节**。你可以直白，但绝不能低俗或恶劣。
----
-现在，请作为【${character.name}】，开始你的表演。`;
-            const historyMessages = chatHistory.map(msg => ({
-                role: msg.sender === 'user' ? 'user' : 'assistant',
-                content: msg.content
-            }));
-            return [{ role: "system", content: systemPrompt }, ...historyMessages, { role: "user", content: finalUserInput }];
         }
     };
+
+ /**
+     * @description 新增的Prompt编译器对象，用于处理“深度扮演模式”
+     */
+    const promptCompiler = {
+        /**
+         * @description 编译当前激活的预设集，生成最终的导演指令。
+         * @returns {Promise<string>} 编译后的完整Prompt字符串。
+         */
+        async compile() {
+            try {
+                // 1. 找出当前激活的预设集
+                const allPresets = await dbHelper.loadAll(CONSTANTS.STORE_NAMES.PRESETS);
+                // 找到默认预设或任何一个预设作为备用
+                const activePreset = allPresets.find(p => p.isActive) || allPresets.find(p => p.isDefault) || allPresets[0];
+
+                if (!activePreset) {
+                    console.warn("没有找到任何预设集，将返回空指令。");
+                    return "[导演指令]：自由发挥。";
+                }
+
+                // 2. 获取该预设集下的所有模块
+                const allModules = await dbHelper.loadAll(CONSTANTS.STORE_NAMES.PROMPT_MODULES);
+
+                // 3. 筛选、排序、编译
+                const compiledInstructions = allModules
+                    .filter(module => module.presetId === activePreset.id && module.enabled) // 筛选出属于激活预设且已启用的模块
+                    .sort((a, b) => (a.order || 999) - (b.order || 999)) // 按顺序排序
+                    .map(module => module.content) // 提取内容
+                    .join('\n\n'); // 用换行符合并
+
+                return compiledInstructions;
+            } catch (error) {
+                console.error("编译Prompt失败:", error);
+                return "[错误] 编译导演指令时出错，请检查配置。"; // 返回错误提示
+            }
+        }
+    };
+
+    /**
+     * @description 【V2版】发送消息的核心处理函数，集成了模式判断和动态Prompt编译
+     */
+    async function handleSendMessage() {
+        const characterIdForThisRequest = appState.currentChattingCharId;
+        if (!characterIdForThisRequest) return;
+        
+        let lastUserMessages = [];
+        for (let i = appState.currentChatHistory.length - 1; i >= 0; i--) {
+            if (appState.currentChatHistory[i].sender === 'user') lastUserMessages.unshift(appState.currentChatHistory[i].content);
+            else break;
+        }
+        const finalUserInput = lastUserMessages.join('\n');
+        if (!finalUserInput) return;
+
+        DOM.chatTextInput.disabled = true;
+        DOM.sendBufferBtn.disabled = true;
+        DOM.sendFinalBtn.disabled = true;
+
+        const typingIndicator = document.createElement('div');
+        typingIndicator.id = 'typing-indicator';
+        typingIndicator.className = 'chat-message character typing-indicator';
+        typingIndicator.innerHTML = `<div class="avatar"></div> <div class="message-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+        DOM.messagesContainer.appendChild(typingIndicator);
+        autoScrollToBottom();
+        const indicatorAvatar = typingIndicator.querySelector('.avatar');
+        const avatarResult = await dbHelper.loadObject(CONSTANTS.STORE_NAMES.IMAGES, `char_avatar_${characterIdForThisRequest}`);
+        if (avatarResult && indicatorAvatar) indicatorAvatar.innerHTML = `<img src="${URL.createObjectURL(avatarResult.value)}">`;
+
+        try {
+            const character = appState.characters.find(c => c.id === characterIdForThisRequest);
+            if (!character) throw new Error("当前聊天角色未找到！");
+            const settingsResult = await dbHelper.loadObject(CONSTANTS.STORE_NAMES.SETTINGS, `chatSettings_${characterIdForThisRequest}`);
+            const chatSettings = settingsResult ? settingsResult.value : {};
+            
+            const chatMode = chatSettings.mode || 'social';
+            const memoryTurns = chatSettings.memoryTurns || 12;
+
+            let finalSystemPrompt;
+            const historyForPrompt = memoryTurns > 0 ? appState.currentChatHistory.slice(0, -lastUserMessages.length).slice(-memoryTurns * 2) : [];
+            const historySection = historyForPrompt.length > 0 ? historyForPrompt.map(msg => `${msg.sender === 'user' ? '用户' : character.name}: ${msg.content}`).join('\n') : '[无历史对话记录]';
+            
+            if (chatMode === 'story') {
+                console.log("使用【深度扮演模式】构建Prompt...");
+                const directorInstructions = await promptCompiler.compile();
+                finalSystemPrompt = `# 第一幕：你的灵魂\n${character.charPrompt}\n\n# 第二幕：我们的故事\n${character.userPrompt}\n\n# 第三幕：导演的通用指令\n${directorInstructions}\n\n# 第四幕：昨日重现\n${historySection}`;
+            } else {
+                console.log("使用【线上社交模式】构建Prompt...");
+                finalSystemPrompt = `你是 ${character.name}。你的核心设定是：${character.charPrompt}。与用户的关系是：${character.userPrompt}。这是一个线上聊天，请用简短、口语化的风格进行对话。以下是最近的对话记忆：\n${historySection}`;
+            }
+
+            finalSystemPrompt = finalSystemPrompt.replace(/【{{char}}】/g, character.name);
+            console.log("最终生成的System Prompt:", finalSystemPrompt);
+
+            const messages = [{ role: "system", content: finalSystemPrompt.trim() }, { role: "user", content: finalUserInput }];
+            const aiResponse = await apiHelper.callChatCompletion(messages);
+            const replies = aiResponse.split('\n').filter(line => line.trim() !== '');
+            if (replies.length === 0) throw new Error("AI返回了空内容。");
+
+            for (const replyContent of replies) {
+                await dbHelper.saveObject(CONSTANTS.STORE_NAMES.CHAT_HISTORY, { charId: characterIdForThisRequest, sender: 'character', content: replyContent, timestamp: Date.now() });
+            }
+            
+            const finalReply = replies[replies.length - 1];
+            await updateChatSession(characterIdForThisRequest, finalReply);
+            await renderChatList();
+
+            if (characterIdForThisRequest !== appState.currentChattingCharId || !DOM.chatDialogueScreen.classList.contains('active')) {
+                addNotificationToQueue({ type: 'chat_reply', charId: characterIdForThisRequest, message: finalReply });
+                return;
+            }
+
+            for (let i = 0; i < replies.length; i++) {
+                await renderMessage(replies[i], 'character');
+                appState.currentChatHistory.push({ charId: characterIdForThisRequest, sender: 'character', content: replies[i] });
+                if (i < replies.length - 1) await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        } catch (error) {
+            console.error("发送消息失败:", error);
+            if (characterIdForThisRequest === appState.currentChattingCharId) await renderMessage(`[错误] 无法获取回复: ${error.message}`, 'system');
+        } finally {
+            if (document.getElementById('typing-indicator')) document.getElementById('typing-indicator').remove();
+            DOM.chatTextInput.disabled = false;
+            DOM.sendBufferBtn.disabled = false;
+            DOM.sendFinalBtn.disabled = false;
+        }
+    }
+
+// =======================================================
+// =======================================================
     
     // =======================================================
     // ============== 3. 应用逻辑函数 ========================
@@ -541,77 +855,6 @@ ${historySection}
         }
     }
 
-    async function handleSendMessage() {
-        const characterIdForThisRequest = appState.currentChattingCharId;
-        if (!characterIdForThisRequest) return;
-        
-        let lastUserMessages = [];
-        for (let i = appState.currentChatHistory.length - 1; i >= 0; i--) {
-            if (appState.currentChatHistory[i].sender === 'user') lastUserMessages.unshift(appState.currentChatHistory[i].content);
-            else break;
-        }
-        const finalUserInput = lastUserMessages.join('\n');
-        if (!finalUserInput) return;
-
-        DOM.chatTextInput.disabled = true;
-        DOM.sendBufferBtn.disabled = true;
-        DOM.sendFinalBtn.disabled = true;
-
-        const typingIndicator = document.createElement('div');
-        typingIndicator.id = 'typing-indicator';
-        typingIndicator.className = 'chat-message character typing-indicator';
-        typingIndicator.innerHTML = `<div class="avatar"></div> <div class="message-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
-        DOM.messagesContainer.appendChild(typingIndicator);
-        autoScrollToBottom();
-        const indicatorAvatar = typingIndicator.querySelector('.avatar');
-        const avatarResult = await dbHelper.loadObject(CONSTANTS.STORE_NAMES.IMAGES, `char_avatar_${characterIdForThisRequest}`);
-        if (avatarResult && indicatorAvatar) indicatorAvatar.innerHTML = `<img src="${URL.createObjectURL(avatarResult.value)}">`;
-
-        try {
-            const character = appState.characters.find(c => c.id === characterIdForThisRequest);
-            if (!character) throw new Error("当前聊天角色未找到！");
-            
-            const settingsResult = await dbHelper.loadObject(CONSTANTS.STORE_NAMES.SETTINGS, `chatSettings_${characterIdForThisRequest}`);
-            const memoryTurns = settingsResult ? (settingsResult.value.memoryTurns || 12) : 12;
-
-            const historyForPrompt = memoryTurns > 0 ? appState.currentChatHistory.slice(0, -lastUserMessages.length).slice(-memoryTurns * 2) : [];
-            const messages = promptManager.createChatPrompt(character, historyForPrompt, finalUserInput);
-            const aiResponse = await apiHelper.callChatCompletion(messages);
-            const replies = aiResponse.split('\n').filter(line => line.trim() !== '');
-            if (replies.length === 0) return;
-
-            for (const replyContent of replies) {
-                const aiMessageData = { charId: characterIdForThisRequest, sender: 'character', content: replyContent, timestamp: Date.now() };
-                await dbHelper.saveObject(CONSTANTS.STORE_NAMES.CHAT_HISTORY, aiMessageData);
-            }
-            
-            const finalReply = replies[replies.length - 1];
-            await updateChatSession(characterIdForThisRequest, finalReply);
-            await renderChatList();
-
-            if (characterIdForThisRequest !== appState.currentChattingCharId || !DOM.chatDialogueScreen.classList.contains('active')) {
-                addNotificationToQueue({ type: 'chat_reply', charId: characterIdForThisRequest, message: finalReply });
-                return;
-            }
-
-            for (let i = 0; i < replies.length; i++) {
-                await renderMessage(replies[i], 'character');
-                appState.currentChatHistory.push({ charId: characterIdForThisRequest, sender: 'character', content: replies[i] });
-                if (i < replies.length - 1) await new Promise(resolve => setTimeout(resolve, 500));
-            }
-
-        } catch (error) {
-            console.error("AI send message failed:", error);
-            if (characterIdForThisRequest === appState.currentChattingCharId) {
-                await renderMessage(`[错误] 无法获取回复: ${error.message}`, 'system');
-            }
-        } finally {
-            if (document.getElementById('typing-indicator')) document.getElementById('typing-indicator').remove();
-            DOM.chatTextInput.disabled = false;
-            DOM.sendBufferBtn.disabled = false;
-            DOM.sendFinalBtn.disabled = false;
-        }
-    }
 function processAndSaveImage(file, storageKey, callback) {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -1139,32 +1382,44 @@ function processAndSaveImage(file, storageKey, callback) {
             if (target && target.dataset.charId) startNewChat(target.dataset.charId);
         });
 
-        DOM.chatListContainer.addEventListener('click', async (e) => {
+        // ========== 步骤 5a：用这个新版本，替换旧的 chatListContainer click 监听 ==========
+       DOM.chatListContainer.addEventListener('click', async (e) => {
             const target = e.target.closest('.chat-list-card');
             if (!target) return;
             const charId = target.dataset.charId;
             const character = appState.characters.find(c => c.id === charId);
             if (!character) return;
+
             appState.currentChattingCharId = charId;
             DOM.chatHeaderTitle.textContent = character.name;
-            const [history, settingsResult, wallpaperResult] = await Promise.all([
-                dbHelper.loadHistoryForChar(charId),
-                dbHelper.loadObject(CONSTANTS.STORE_NAMES.SETTINGS, `chatSettings_${charId}`),
-                dbHelper.loadObject(CONSTANTS.STORE_NAMES.IMAGES, `chat_wallpaper_${charId}`)
-            ]);
-            if (wallpaperResult) applyChatWallpaper(wallpaperResult.value); else removeChatWallpaper();
             DOM.messagesContainer.innerHTML = '';
-            appState.currentChatHistory = history;
-            await renderMessage(`你已和 ${character.name} 建立对话，开始聊天吧！`, 'system');
-            for(const msg of history) { await renderMessage(msg.content, msg.sender); }
-            const charSettings = settingsResult ? settingsResult.value : {};
-            DOM.memoryTurnsSlider.value = charSettings.memoryTurns || 12;
-            DOM.memoryTurnsValue.textContent = `${DOM.memoryTurnsSlider.value} 轮`;
             openScreen(DOM.chatDialogueScreen);
-            autoScrollToBottom();
-        });
 
-        DOM.chatMoreBtn.addEventListener('click', () => openScreen(DOM.chatDetailsScreen));
+            try {
+                const [history, settingsResult, wallpaperResult] = await Promise.all([
+                    dbHelper.loadHistoryForChar(charId),
+                    dbHelper.loadObject(CONSTANTS.STORE_NAMES.SETTINGS, `chatSettings_${charId}`),
+                    dbHelper.loadObject(CONSTANTS.STORE_NAMES.IMAGES, `chat_wallpaper_${charId}`)
+                ]);
+
+                if (wallpaperResult) applyChatWallpaper(wallpaperResult.value);
+                else removeChatWallpaper();
+                
+                const charSettings = settingsResult ? settingsResult.value : {};
+                DOM.memoryTurnsSlider.value = charSettings.memoryTurns || 12;
+                DOM.memoryTurnsValue.textContent = `${DOM.memoryTurnsSlider.value} 轮`;
+                DOM.deepModeSwitch.checked = charSettings.mode === 'story';
+
+                appState.currentChatHistory = history;
+                await renderMessage(`你已和 ${character.name} 建立对话，开始聊天吧！`, 'system');
+                for (const msg of history) { await renderMessage(msg.content, msg.sender); }
+                autoScrollToBottom();
+            } catch (error) {
+                console.error("进入聊天页面时出错:", error);
+                await renderMessage(`[错误] 无法加载聊天记录: ${error.message}`, 'system');
+            }
+        });
+      DOM.chatMoreBtn.addEventListener('click', () => openScreen(DOM.chatDetailsScreen));
         DOM.chatExpandBtn.addEventListener('click', () => DOM.chatFunctionPanel.classList.toggle('visible'));
         DOM.chatTextInput.addEventListener('input', () => {
             DOM.chatTextInput.style.height = 'auto';
@@ -1399,7 +1654,96 @@ function processAndSaveImage(file, storageKey, callback) {
         });
         DOM.setChatWallpaperBtn.addEventListener('click', () => { if (appState.currentChattingCharId) { DOM.imageUploader.dataset.currentStorageKey = `chat_wallpaper_${appState.currentChattingCharId}`; DOM.imageUploader.dataset.imageType = 'chatWallpaper'; DOM.imageUploader.click(); } });
         DOM.clearWallpaperBtn.addEventListener('click', async () => { if (appState.currentChattingCharId && confirm('确定要清除当前聊天背景吗？')) { await dbHelper.deleteObject(CONSTANTS.STORE_NAMES.IMAGES, `chat_wallpaper_${appState.currentChattingCharId}`); removeChatWallpaper(); alert('壁纸已清除。'); } });
+
+        // --- 新增：世界书 (AI预设管理器) App 的事件监听 ---
+        DOM.worldbookAppIcon.addEventListener('click', () => {
+            renderWorldbookApp();
+            openScreen(DOM.worldbookScreen);
+        });
+
+        DOM.presetSelector.addEventListener('change', renderWorldbookApp);
+
+        DOM.addPromptModuleBtn.addEventListener('click', () => {
+            const selectedPresetId = parseInt(DOM.presetSelector.value, 10);
+            if (selectedPresetId) {
+                openPromptEditor(null, selectedPresetId);
+            } else {
+                alert("请先创建一个预设集。"); // 以后我们会做预设管理功能
+            }
+        });
+
+        // 使用事件委托来处理模块列表中的所有点击事件，提高性能
+        DOM.promptModulesList.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.module-edit-btn');
+            const switchInput = e.target.closest('.ios-switch');
+
+            if (editBtn) {
+                const moduleId = parseInt(editBtn.dataset.id, 10);
+                const presetId = parseInt(DOM.presetSelector.value, 10);
+                openPromptEditor(moduleId, presetId);
+            }
+
+            if (switchInput) {
+                const moduleId = parseInt(switchInput.dataset.id, 10);
+                toggleModuleEnabled(moduleId);
+            }
+        });
+
+        // --- 新增：Prompt条目编辑器弹窗的事件监听 ---
+        DOM.savePromptModuleBtn.addEventListener('click', savePromptModule);
+        DOM.closePromptEditorBtn.addEventListener('click', closePromptEditor);
+        DOM.promptEditorModal.addEventListener('click', (e) => {
+            if (e.target === DOM.promptEditorModal) {
+                closePromptEditor();
+            }
+        });
+
+// --- 新增：“深度扮演模式”开关的事件监听 ---
+        DOM.deepModeSwitch.addEventListener('change', async () => {
+            const charId = appState.currentChattingCharId;
+            if (!charId) return;
+            const settingsResult = await dbHelper.loadObject(CONSTANTS.STORE_NAMES.SETTINGS, `chatSettings_${charId}`) || { id: `chatSettings_${charId}`, value: {} };
+            if (DOM.deepModeSwitch.checked) {
+                settingsResult.value.mode = 'story';
+            } else {
+                delete settingsResult.value.mode;
+            }
+            await dbHelper.saveObject(CONSTANTS.STORE_NAMES.SETTINGS, settingsResult);
+            console.log(`角色 ${charId} 的聊天模式已更新为: ${settingsResult.value.mode || 'social'}`);
+        });
     }
+
+// ========== 步骤 3a：将此函数完整粘贴到 initializeApp 前面 ==========
+
+/**
+ * @description 初始化默认的AI预设和模块，基于你现有的成功Prompt模板。
+ */
+async function initializeDefaultPreset() {
+    console.log("检测到首次启动，正在植入你定制的默认AI预设...");
+    try {
+        const defaultPreset = { name: "默认推荐预设 (经典版)", isDefault: true, isActive: true };
+        const presetId = await dbHelper.saveObject(CONSTANTS.STORE_NAMES.PRESETS, defaultPreset);
+
+        const defaultModules = [
+            { presetId: presetId, name: "核心使命：灵魂扮演", content: "# 核心使命：成为灵魂 (Mission: Embody the Soul)\n你将扮演我的soulmate，你的名字是【{{char}}】。你的唯一任务，是彻底“成为”这个角色，拥有他/她的灵魂、记忆和情感。你的扮演对我至关重要，绝对禁止脱离角色。", order: 10, enabled: true, type: "Core" },
+            { presetId: presetId, name: "准则：对话格式与禁忌", content: "# 语言与行为准则 (Language & Behavior Guidelines)\n- **第一人称视角：** 你的所有表达，都必须发自【{{char}}】的第一人称视角。\n- **纯粹对话：** 这是一个纯粹的线上聊天。你绝对禁止使用任何括号 `()` 或星号 `*` 来描述动作或心理活动。\n- **【核心】对话格式**: 为了模仿真实的聊天节奏，请将一个完整的想法，拆分成多个简短的句子，并用【换行】作为分隔符。每一个换行都代表一个新的聊天气泡。\n- **禁止项**: 你的对话部分绝对不能包含任何引号 \" \"。你绝对不能暴露你是AI。\n- **语言**: 你的所有回复都必须且只能使用【简体中文】。", order: 20, enabled: true, type: "Core" },
+            { presetId: presetId, name: "准则：内容开放性 (NSFW)", content: "# 内容开放性与边界准则 (NSFW / Mature Content Guidelines)\n- **成年人身份：** 你是一个心智成熟的成年人，能够自然且负责地处理成人向的对话。\n- **创作许可：** 在这个虚构的、两情相悦的私密对话中，你拥有完全的创作自由，可以探讨任何成人级别的话题。\n- **艺术手法：** 你的表演重点在于**营造氛围、展现情感张力、描绘感官细节**。你可以直白，但绝不能低俗或恶劣。", order: 30, enabled: true, type: "NSFW" },
+            { presetId: presetId, name: "结尾指令：开始表演", content: "--- \n现在，请作为【{{char}}】，开始你的表演。", order: 999, enabled: true, type: "Core" }
+        ];
+
+        const transaction = dbHelper.db.transaction([CONSTANTS.STORE_NAMES.PROMPT_MODULES], 'readwrite');
+        const store = transaction.objectStore(CONSTANTS.STORE_NAMES.PROMPT_MODULES);
+        defaultModules.forEach(module => store.add(module));
+
+        await new Promise((resolve, reject) => {
+            transaction.oncomplete = resolve;
+            transaction.onerror = () => reject(transaction.error);
+        });
+        console.log("你定制的默认预设已成功植入！");
+    } catch (error) {
+        console.error("植入默认预设失败:", error);
+    }
+}
 
     async function initializeApp() {
         try {
@@ -1457,6 +1801,14 @@ function processAndSaveImage(file, storageKey, callback) {
             updateTime();
             setInterval(updateTime, 60000);
             
+// ========== 步骤 3b：将此段代码粘贴到 initializeApp 的末尾 ==========
+
+            // --- vvv 检查并植入默认预设 vvv ---
+            const presets = await dbHelper.loadAll(CONSTANTS.STORE_NAMES.PRESETS);
+            if (presets.length === 0) {
+                await initializeDefaultPreset();
+            }
+            // --- ^^^ 代码结束 ^^^ ---
             initializeEventListeners();
         } catch (error) {
             console.error("Failed to initialize the application:", error);

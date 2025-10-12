@@ -170,6 +170,34 @@
                     </div>
                 </section>
 
+<!-- ========== 1a: 【新增】世界书 App 屏幕 ========== -->
+
+                <!-- 世界书 (AI预设管理器) App -->
+                <section class="app-screen" id="screen-worldbook">
+                    <div class="app-header">
+                        <button class="back-btn" aria-label="返回"><i class="fas fa-chevron-left"></i></button>
+                        <h1>世界书</h1>
+                        <div class="header-placeholder">
+                            <button id="add-prompt-module-btn" class="add-song-btn" aria-label="添加新条目"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="app-content">
+                        <!-- 预设集选择区域 -->
+                        <div class="preset-selector-area">
+                            <select id="preset-selector" class="form-input"></select>
+                            <button id="manage-presets-btn" class="form-btn-small"><i class="fas fa-cog"></i></button>
+                        </div>
+
+                        <!-- Prompt模块列表区域 -->
+                        <ul id="prompt-modules-list" class="menu-list">
+                            <!-- JS将在这里动态生成模块列表 -->
+                            <div class="empty-list-placeholder">
+                                <p>正在加载预设...</p>
+                            </div>
+                        </ul>
+                    </div>
+                </section>
+
                 <!-- 角色书 App -->
                 <section class="app-screen" id="screen-character-book">
                     <div class="app-header">
@@ -306,6 +334,13 @@
                                 <span>设置聊天壁纸</span>
                                 <i class="fas fa-chevron-right" style="opacity: 0.5;"></i>
                             </li>
+<li>
+                                <span>深度扮演模式</span>
+                                <div class="switch-container">
+                                    <input type="checkbox" id="deep-mode-switch" class="ios-switch">
+                                    <label for="deep-mode-switch"></label>
+                                </div>
+                            </li>
                         </ul>
                         
                         <div class="danger-zone">
@@ -350,6 +385,29 @@
                 <!-- JS将在这里动态生成角色列表 -->
             </div>
             <button id="close-select-char-modal-btn" class="modal-close-btn">取消</button>
+        </div>
+    </div>
+
+<!-- ========== 1b: 【新增】Prompt条目编辑器弹窗 ========== -->
+
+    <!-- (新添加) Prompt条目编辑器 - 浮窗 -->
+    <div id="prompt-editor-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="prompt-editor-title">创建新条目</h2>
+            <input type="hidden" id="prompt-module-id">
+            <input type="text" id="prompt-module-name" class="form-input" placeholder="条目名称 (如：情感波动模拟)">
+            <div class="form-row">
+                <input type="number" id="prompt-module-order" class="form-input" placeholder="顺序 (数字越小越靠前)">
+                <select id="prompt-module-type" class="form-input">
+                    <option value="Core">核心规则</option>
+                    <option value="Style">写作风格</option>
+                    <option value="NSFW">NSFW</option>
+                    <option value="Other">其他</option>
+                </select>
+            </div>
+            <textarea id="prompt-module-content" class="form-textarea" placeholder="在此处粘贴或编写Prompt内容..."></textarea>
+            <button id="save-prompt-module-btn" class="form-btn-full">保存条目</button>
+            <button id="close-prompt-editor-btn" class="modal-btn modal-close-btn">取消</button>
         </div>
     </div>
 
